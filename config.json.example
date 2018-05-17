@@ -1,7 +1,7 @@
 {
   "version": 0.1,
-  "owner_id": 0123456789,
   "discord": {
+    "owner_id": 0123456789,
     "token": "insert_your_token_here",
     "prefix": "?",
     "disabled_groups": [
