@@ -1,4 +1,6 @@
 {
+  "version": 0.1,
+  "owner_id": 0123456789,
   "discord": {
     "token": "insert_your_token_here",
     "prefix": "?",
