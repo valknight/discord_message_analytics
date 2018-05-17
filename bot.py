@@ -18,7 +18,7 @@ strings = json.load(strings_f)[config['language']]
 from discord.ext import commands
 
 cnx = mysql.connector.connect(**config['mysql'])
-cnx = cnx.cursor()
+cursor = cnx.cursor()
 
 token = config['discord']['token']
 client = commands.Bot(command_prefix=config['discord']['prefix'])
