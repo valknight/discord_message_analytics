@@ -50,6 +50,9 @@ Your data may also be stored on data centres around the world, due to our usage 
 
 
 def is_owner():
+    """
+    Check used for commands which are owner only
+    """
     def predicate(ctx):
         if ctx.author.id == config['discord']['owner_id']:
             return True
@@ -59,7 +62,6 @@ def is_owner():
 
 @client.event
 async def on_ready():
-
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
@@ -79,6 +81,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    # this set of code in on_message is used to save incoming new messages
     channel = message.channel
     user_exp = opted_in(id=message.author.id)
 
@@ -90,7 +93,8 @@ async def on_message(message):
                 cursor_summer.execute(add_message_custom, (user_exp, int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
             except mysql.connector.errors.IntegrityError:
                 pass
-
+    # this records analytical data - don't adjust this without reading
+    # Discord TOS first
     try:
         cursor_summer.execute(add_message, (int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
         cnx_summer.commit()
@@ -103,8 +107,13 @@ async def on_message(message):
 @is_owner()
 @client.command()
 async def process_server(ctx):
+    """
+    Admin command used to record anonymous analytical data.
+    """
     print("Logging")
     for channel in ctx.guild.text_channels:
+        # we run through every channel as discord doesn't provide an
+        # easy alternative
         print(str(channel.name) + " is being processed. Please wait.")
         async for message in channel.history(limit=None, reverse=True):
             try:
@@ -113,14 +122,18 @@ async def process_server(ctx):
                 print("Couldn't insert, probs a time issue")
             except mysql.connector.errors.IntegrityError:
                 pass
+        # commit is here, as putting it in for every message causes
+        # mysql to nearly slow to a halt with the amount of queries
         cnx_summer.commit()
         print(str(channel.name) + " has been processed.")
     print("Done!")
-    return await client.process_commands(message)
 
 
 @client.command()
 async def experiments(ctx):
+    """
+    Run this to opt into experiments
+    """
     message = ctx.message
     channel = message.channel
 
@@ -169,6 +182,9 @@ CREATE TABLE `%s` (
 @is_owner()
 @client.command()
 async def is_processed(ctx, user=None):
+    """
+    Admin command used to check if a member has opted in
+    """
     if user is None:
         user = ctx.author.name
 
@@ -180,6 +196,14 @@ async def is_processed(ctx, user=None):
 
 
 def opted_in(user=None, id=None):
+    """
+    ID takes priority over user if provided
+
+    User: Logged username in DB
+    ID: ID of user
+
+    Returns true if user is opted in, false if not
+    """
     if id is None:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `username`=%s;"
     else:
@@ -197,6 +221,14 @@ def opted_in(user=None, id=None):
 
 
 def get_messages(table_name):
+    """
+    table_name : Username of user you want to get messages for
+
+    Returns:
+
+    messages: list of all messages from a user
+    channels: list of all channels relevant to messages, in same order
+    """
     get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC"
     cursor_summer.execute(get_messages, (table_name, ))
     results = cursor_summer.fetchall()
@@ -211,6 +243,11 @@ def get_messages(table_name):
 
 
 def get_channel(id):
+    """
+    Get channel from one of the servers the bot is in
+    ID: Channel ID
+    Returns channel object, or None if channel does not exist
+    """
     for server in client.guilds:
         for channel in server.channels:
             if str(channel.id) == str(id):
@@ -219,7 +256,13 @@ def get_channel(id):
 
 
 def channel_allowed(id, existing_channel, nsfw=False):
+    """
+    Check if a channel is allowed in current context
 
+    id: ID of channel
+    existing_channel: channel object of existing channel
+    nsfw: whether to only return NSFW channels
+    """
     channel = get_channel(int(id))
 
     for x in range(0, len(disabled_groups)):
@@ -241,6 +284,12 @@ def channel_allowed(id, existing_channel, nsfw=False):
 
 
 async def save_markov(model, user_id):
+    """
+    Save a model to markov table
+
+    user_id : user's ID we want to save for
+    model: Markov model object
+    """
     save = "INSERT INTO `markovs` (`user`, `markov_json`) VALUES (%s, %s);"
     save_update = "UPDATE `markovs` SET `markov_json`=%s WHERE `user`=%s;"
 
@@ -254,6 +303,10 @@ async def save_markov(model, user_id):
 
 @client.command()
 async def markov_server(ctx, nsfw=0, selected_channel=None):
+    """
+    Generates markov output based on entire server's messages.
+    """
+
     output = await ctx.channel.send(content=strings['markov']['title'] + strings['emojis']['markov'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
@@ -305,7 +358,7 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
         em = discord.Embed(
             title=strings['markov']['output']['title_server'], description=message_formatted)
 
-        em.set_footer(strings['markov']['output']['footer'])
+        em.set_footer(text=strings['markov']['output']['footer'])
         await output.delete()
         output = await ctx.channel.send(embed=em, content=None)
     return await delete_option(client, ctx, output, client.get_emoji(strings['emoji']['delete']) or "❌")
@@ -313,6 +366,9 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
 
 @client.command()
 async def markov(ctx, nsfw=0, selected_channel=None):
+    """
+    Generates markov output for user who ran this command
+    """
     output = await ctx.channel.send(content=strings['markov']['title'] + strings['emojis']['markov'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
@@ -376,7 +432,7 @@ async def get_blacklist(user_id):
 @client.command()
 async def blacklist(ctx, command=None, word=None):
     """
-    Prevents words from being shown publicly through methods such as markov and markov_server. 
+    Prevents words from being shown publicly through methods such as markov and markov_server.
     Note: they will still be logged, and this just prevents them being shown in chat.
 
     Command: option to use
@@ -418,6 +474,13 @@ No subcommand selected - please enter a subcommand for your blacklist.
 
 
 async def build_data_profile(name, member, guild):
+    """
+    Used for building a data profile based on a user
+
+    Name: name of user
+    Member: member object
+    Guild: Guild object
+    """
     print("Initialising data tracking for " + name)
     for summer_channel in guild.text_channels:
         adding = True
