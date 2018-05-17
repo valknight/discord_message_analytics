@@ -49,6 +49,16 @@ Your data may also be stored on data centres around the world, due to our usage 
 """
 
 
+def is_owner():
+    def predicate(ctx):
+        if ctx.author.id == config['discord']['owner_id']:
+            return True
+        return False
+
+
+return commands.check(predicate)
+
+
 @client.event
 async def on_ready():
 
@@ -89,22 +99,25 @@ async def on_message(message):
     except mysql.connector.errors.IntegrityError:
         pass
 
-    if False and str(message.clean_content) == "i made this trigger message really long and obscure bc we all know security through obscurity is the best method":
-        print("Logging")
-        for channel in message.guild.text_channels:
-            print(str(channel.name) + " is being processed. Please wait.")
-            async for message in channel.history(limit=None, reverse=True):
-                try:
-                    cursor.execute(add_message, (int(message.id), str(
-                        message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
+    return await client.process_commands(message)
 
-                except mysql.connector.errors.DataError:
-                    print("Couldn't insert, probs a time issue")
-                except mysql.connector.errors.IntegrityError:
-                    pass
-            cnx_summer.commit()
-            print(str(channel.name) + " has been processed.")
-        print("Done!")
+
+@is_owner()
+@client.command()
+async def process_server(ctx):
+    print("Logging")
+    for channel in ctx.guild.text_channels:
+        print(str(channel.name) + " is being processed. Please wait.")
+        async for message in channel.history(limit=None, reverse=True):
+            try:
+                cursor.execute(add_message, (int(message.id), str(ctx.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
+            except mysql.connector.errors.DataError:
+                print("Couldn't insert, probs a time issue")
+            except mysql.connector.errors.IntegrityError:
+                pass
+        cnx_summer.commit()
+        print(str(channel.name) + " has been processed.")
+    print("Done!")
     return await client.process_commands(message)
 
 
@@ -114,7 +127,7 @@ async def experiments(ctx):
     channel = message.channel
 
     author = message.author
-    create_user = "INSERT INTO `gssp_logging`.`users` (`user_id`, `username`) VALUES (%s, %s);"
+    create_user = "INSERT INTO `users` (`user_id`, `username`) VALUES (%s, %s);"
     try:
         cursor_summer.execute(create_user, (author.id, author.name))
         cnx_summer.commit()
@@ -125,11 +138,11 @@ async def experiments(ctx):
         em.set_footer(text=strings['data_collection']['opt_in_footer'])
         return await channel.send(embed=em)
     except mysql.connector.errors.IntegrityError:
-        get_user = "SELECT `username` FROM`gssp_logging`.`users` WHERE  `user_id`=%s;"
+        get_user = "SELECT `username` FROM `users` WHERE  `user_id`=%s;"
         cursor_summer.execute(get_user, (author.id, ))
         username = (cursor_summer.fetchall()[0])[0]
 
-        opt_in_user = "UPDATE `gssp_logging`.`users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
+        opt_in_user = "UPDATE `users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
 
         cursor_summer.execute(opt_in_user, (author.id, ))
         create_table = """
@@ -155,6 +168,7 @@ CREATE TABLE `%s` (
     await channel.send(strings['data_collection']['complete'].format(author.name))
 
 
+@is_admin()
 @client.command()
 async def is_processed(ctx, user=None):
     if user is None:
@@ -169,9 +183,9 @@ async def is_processed(ctx, user=None):
 
 def opted_in(user=None, id=None):
     if id is None:
-        get_user = "SELECT `opted_in`, `username` FROM`gssp_logging`.`users` WHERE  `username`=%s;"
+        get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `username`=%s;"
     else:
-        get_user = "SELECT `opted_in`, `username` FROM`gssp_logging`.`users` WHERE  `user_id`=%s;"
+        get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
         user = id
 
     cursor_summer.execute(get_user, (user, ))
@@ -229,8 +243,8 @@ def channel_allowed(id, existing_channel, nsfw=False):
 
 
 async def save_markov(model, user_id):
-    save = "INSERT INTO `gssp_logging`.`markovs` (`user`, `markov_json`) VALUES (%s, %s);"
-    save_update = "UPDATE `gssp_logging`.`markovs` SET `markov_json`=%s WHERE `user`=%s;"
+    save = "INSERT INTO `markovs` (`user`, `markov_json`) VALUES (%s, %s);"
+    save_update = "UPDATE `markovs` SET `markov_json`=%s WHERE `user`=%s;"
 
     try:
         cursor_summer.execute(save, (user_id, model.to_json()))
