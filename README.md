@@ -1,9 +1,9 @@
-#Discord Experiments
+# Discord Experiments
 *A bot which allows you to run ethical experiments using Discord data*
 
 **Note: This bot requires *express* user consent. Modifying this bot to remove these checking features would result in you violating Discord TOS. Don't do it.**
 
-##Setup
+## Setup
 
 1. Create a schema inside MySQL. You can name it whatever you want, just remember what you call it.
 
