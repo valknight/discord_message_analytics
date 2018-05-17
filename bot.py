@@ -166,7 +166,7 @@ CREATE TABLE `%s` (
     await channel.send(strings['data_collection']['complete'].format(author.name))
 
 
-@is_admin()
+@is_owner()
 @client.command()
 async def is_processed(ctx, user=None):
     if user is None:
