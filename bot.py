@@ -54,9 +54,7 @@ def is_owner():
         if ctx.author.id == config['discord']['owner_id']:
             return True
         return False
-
-
-return commands.check(predicate)
+    return commands.check(predicate)
 
 
 @client.event
