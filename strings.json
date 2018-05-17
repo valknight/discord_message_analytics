@@ -1,0 +1,53 @@
+{
+  "english": {
+    "delete_message_title": "{} deleted message",
+    "delete_message_desc": "User deleted this message.",
+    "emojis": {
+      "delete": 434748743871365100,
+      "loading": "<a:zmegathink:412052452582359041>",
+      "success": ":white_check_mark:",
+      "reasurrance": ":thumbsup:",
+      "markov": ":robot:"
+    },
+    "markov": {
+      "title": "**Loading... **",
+      "status": {
+        "messages": "Grabbing messages",
+        "building_markov": "Building markov chain",
+        "making": "Building sentence",
+        "analytical_data": "Reticulating splines"
+      },
+      "errors": {
+        "failed_to_generate": "Failed to generate markov chain",
+        "not_opted_in": ":exclamation: \n Sorry, you need to be opted in to use GSS experiments. Use ?experiments in #bot_spam to get started."
+      },
+      "output": {
+        "footer": "This is an automated message based off the users comments. To delete, someone click the \"oof\"",
+        "title_server": "GSSP but it's been processed by a robot"
+      }
+    },
+    "blacklist": {
+      "status": {
+        "no_word": "Please specify a word.",
+        "adding": "Adding word. Please wait.",
+        "removing": "Removing word. Please wait.",
+        "complete": "Request complete."
+      }
+    },
+    "process_check" : {
+        "status" : {
+            "checking" : "Checking to see if user table exists",
+            "not_opted_in" : "User has not opted into processing. Sorry!",
+            "opted_in" : "User has opted in!"
+        }
+    },
+    "data_collection": {
+      "opt_in_title": "Welcome to GSSP experiments! :atom:",
+      "opt_in_footer": "To proceed, please run this command again.",
+      "created_record": "Created your record as `{}`. Your data is now being processed (don't worry about whether it's done or not - after about 10 minutes we should have enough data for markov chains to work reliably-ish, if you post here a lot)",
+      "update_record": "Your record already exists as `{}` - we're now going to update it. We'll keep you updated on progress",
+      "data_track_start": "Initialising data tracking",
+      "complete": "Finished building {}'s entry! Data analysis can now be ran. If you wish to update your data record at any time, just simply run this command again!"
+    }
+  }
+}
