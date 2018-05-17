@@ -17,22 +17,15 @@ strings = json.load(strings_f)[config['language']]
 
 from discord.ext import commands
 
-cnx_summer = mysql.connector.connect(**config['mysql'])
-cursor_summer = cnx_summer.cursor()
-cursor = cnx_summer.cursor()
+cnx = mysql.connector.connect(**config['mysql'])
+cnx = cnx.cursor()
+
 token = config['discord']['token']
 client = commands.Bot(command_prefix=config['discord']['prefix'])
 
 disabled_groups = config['discord']['disabled_groups']
 
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
-add_message_summer = (
-    "INSERT INTO summer_overlord_ai (id, channel, time, contents) VALUES (%s, %s, %s, %s)")
-
-
-add_message_naomi = (
-    "INSERT INTO naomi_ai (id, channel, time, contents) VALUES (%s, %s, %s, %s)")
 
 add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
@@ -90,14 +83,14 @@ async def on_message(message):
             channel.id, message.channel, message.channel.is_nsfw())
         if is_allowed:
             try:
-                cursor_summer.execute(add_message_custom, (user_exp, int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
+                cnx.execute(add_message_custom, (user_exp, int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
             except mysql.connector.errors.IntegrityError:
                 pass
     # this records analytical data - don't adjust this without reading
     # Discord TOS first
     try:
-        cursor_summer.execute(add_message, (int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
-        cnx_summer.commit()
+        cnx.execute(add_message, (int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
+        cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
 
@@ -124,7 +117,7 @@ async def process_server(ctx):
                 pass
         # commit is here, as putting it in for every message causes
         # mysql to nearly slow to a halt with the amount of queries
-        cnx_summer.commit()
+        cnx.commit()
         print(str(channel.name) + " has been processed.")
     print("Done!")
 
@@ -140,8 +133,8 @@ async def experiments(ctx):
     author = message.author
     create_user = "INSERT INTO `users` (`user_id`, `username`) VALUES (%s, %s);"
     try:
-        cursor_summer.execute(create_user, (author.id, author.name))
-        cnx_summer.commit()
+        cnx.execute(create_user, (author.id, author.name))
+        cnx.commit()
 
         em = discord.Embed(
             title=strings['data_collection']['opt_in_title'], description=opt_in_message)
@@ -150,12 +143,12 @@ async def experiments(ctx):
         return await channel.send(embed=em)
     except mysql.connector.errors.IntegrityError:
         get_user = "SELECT `username` FROM `users` WHERE  `user_id`=%s;"
-        cursor_summer.execute(get_user, (author.id, ))
-        username = (cursor_summer.fetchall()[0])[0]
+        cnx.execute(get_user, (author.id, ))
+        username = (cnx.fetchall()[0])[0]
 
         opt_in_user = "UPDATE `users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
 
-        cursor_summer.execute(opt_in_user, (author.id, ))
+        cnx.execute(opt_in_user, (author.id, ))
         create_table = """
 CREATE TABLE `%s` (
   `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -167,7 +160,7 @@ CREATE TABLE `%s` (
 		"""
 
         try:
-            cursor_summer.execute(create_table, (username, ))
+            cnx.execute(create_table, (username, ))
             await channel.send(strings['data_collection']['created_record'].format(username))
         except mysql.connector.errors.ProgrammingError:
             await channel.send(strings['data_collection']['update_record'].format(username))
@@ -210,8 +203,8 @@ def opted_in(user=None, id=None):
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
         user = id
 
-    cursor_summer.execute(get_user, (user, ))
-    results = cursor_summer.fetchall()
+    cnx.execute(get_user, (user, ))
+    results = cnx.fetchall()
     try:
         if results[0][0] != 1:
             return False
@@ -230,8 +223,8 @@ def get_messages(table_name):
     channels: list of all channels relevant to messages, in same order
     """
     get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC"
-    cursor_summer.execute(get_messages, (table_name, ))
-    results = cursor_summer.fetchall()
+    cnx.execute(get_messages, (table_name, ))
+    results = cnx.fetchall()
     messages = []
     channels = []
 
@@ -294,10 +287,10 @@ async def save_markov(model, user_id):
     save_update = "UPDATE `markovs` SET `markov_json`=%s WHERE `user`=%s;"
 
     try:
-        cursor_summer.execute(save, (user_id, model.to_json()))
+        cnx.execute(save, (user_id, model.to_json()))
     except mysql.connector.errors.IntegrityError:
-        cursor_summer.execute(save_update, (model.to_json(), user_id))
-    cnx_summer.commit()
+        cnx.execute(save_update, (model.to_json(), user_id))
+    cnx.commit()
     return
 
 
@@ -424,8 +417,8 @@ async def markov(ctx, nsfw=0, selected_channel=None):
 
 async def get_blacklist(user_id):
     get = "SELECT blacklist FROM blacklists WHERE user_id = %s"
-    cursor_summer.execute(get, (user_id, ))
-    resultset = cursor_summer.fetchall()
+    cnx.execute(get, (user_id, ))
+    resultset = cnx.fetchall()
     return resultset[0]
 
 
@@ -496,13 +489,13 @@ async def build_data_profile(name, member, guild):
             for message in messages_tocheck:
                 if message.author == member:
                     try:
-                        cursor_summer.execute(add_message_custom, (name, int(message.id), str(
+                        cnx.execute(add_message_custom, (name, int(message.id), str(
                             message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
                     except mysql.connector.errors.DataError:
                         print("Couldn't insert, probs a time issue")
                     except mysql.connector.errors.IntegrityError:
                         pass
-            cnx_summer.commit()
+            cnx.commit()
 
 
 async def delete_option(bot, ctx, message, delete_emoji, timeout=60):
