@@ -1,2 +1,3 @@
 markovify
 mysql-connector
+yarl<1.2
