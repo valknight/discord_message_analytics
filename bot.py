@@ -56,7 +56,7 @@ async def on_ready():
 
     for server in client.guilds:
         for member in server.members:
-            name = opted_in(id=member.id)
+            name = opted_in(user_id=member.id)
             if name is not False:
                 await build_data_profile(name, member, server)
 
@@ -65,7 +65,7 @@ async def on_ready():
 async def on_message(message):
     # this set of code in on_message is used to save incoming new messages
     channel = message.channel
-    user_exp = opted_in(id=message.author.id)
+    user_exp = opted_in(user_id=message.author.id)
 
     if user_exp is not False:
         is_allowed = channel_allowed(
@@ -154,7 +154,7 @@ CREATE TABLE `%s` (
         except mysql.connector.errors.ProgrammingError:
             await channel.send(strings['data_collection']['update_record'].format(username))
 
-    name = opted_in(id=message.author.id)
+    name = opted_in(user_id=message.author.id)
 
     await channel.send(strings['data_collection']['data_track_start'])
     await build_data_profile(name, author, message.guild)
@@ -323,7 +323,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         print(selected_channel)
         for server in client.guilds:
             for member in server.members:
-                username = opted_in(id=member.id)
+                username = opted_in(user_id=member.id)
                 if username is not False:
                     messages, channels = get_messages(username)
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
@@ -369,7 +369,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
-        username = opted_in(id=ctx.author.id)
+        username = opted_in(user_id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
         messages, channels = get_messages(username)
