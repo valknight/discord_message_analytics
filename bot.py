@@ -408,7 +408,7 @@ async def blacklist(ctx, command=None, word=None):
     Command: option to use
     Word: Word to add or remove from blacklist
     """
-    await ctx.message.remove()
+    await ctx.message.delete()
     if command is None:
         return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
