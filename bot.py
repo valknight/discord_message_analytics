@@ -396,7 +396,9 @@ async def get_blacklist(user_id):
     get = "SELECT blacklist FROM blacklists WHERE user_id = %s"
     cursor.execute(get, (user_id, ))
     resultset = cursor.fetchall()
-    return resultset[0]
+	if len(resultset) == 0:
+		return []
+    return json.loads(resultset[0])
 
 
 @client.command()
@@ -423,13 +425,26 @@ No subcommand selected - please enter a subcommand for your blacklist.
             return await ctx.send(strings['blacklist']['status']['no_word'])
         msg = await ctx.send(strings['blacklist']['status']['adding'])
         # TODO :Insert logic here
+		# fetch the current blacklist
+		# split the words if there are more than one(or maybe only allow one at a time)
+		# for each word
+			#check if the word is already on the list. throw error if it is
+			# if its not then add it
+		# update DB with new list
     elif command == "remove":
         if word is none:
             return await ctx.send(strings['blacklist']['status']['no_word'])
         msg = await ctx.send(strings['blacklist']['status']['removing'])
         # TODO: Insert logic here
-
+		# fetch the current blacklist
+		# split the words if there are more than one(or maybe only allow one at a time)
+		# for each word
+			#try and remove it from list (use a try statement, catching ValueError)
+		# update DB with new list
     elif command == "get":
+		# fetch the current blacklist
+		# make it nice to look at
+		# send a private message with the nice to look at blacklist
         await ctx.send("#TODO")
     else:
         return await ctx.send("""
