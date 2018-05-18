@@ -217,9 +217,9 @@ def get_messages(table_name):
     messages = []
     channels = []
 
-    for x in range(0, len(results)):
-        messages.append(results[x][0])
-        channels.append(results[x][1])
+    for result in results:
+        messages.append(result[0])
+        channels.append(result[1])
 
     return messages, channels
 
@@ -234,8 +234,8 @@ def channel_allowed(id, existing_channel, nsfw=False):
     """
     channel = client.get_channel(int(id))
 
-    for x in range(0, len(disabled_groups)):
-        if str(channel.category).lower() == str(disabled_groups[x]).lower():
+    for group in disabled_groups:
+        if str(channel.category).lower() == str(group).lower():
             return False
 
     if not existing_channel.is_nsfw() and bool(nsfw):
@@ -281,14 +281,14 @@ async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
         selected_channel: Not required, but channel to filter to. If none, filtering is disabled.
         text = list of text that already exists. If not set, we just create one
     """
-    for x in range(0, len(messages)):
+    for counter, m in enumerate(messages):
 
-        if channel_allowed(channels[x], ctx.message.channel, nsfw):
+        if channel_allowed(channels[counter], ctx.message.channel, nsfw):
             if selected_channel is not None:
-                if client.get_channel(int(channels[x])).id == selected_channel.id:
-                    text.append(messages[x])
+                if client.get_channel(int(channels[counter])).id == selected_channel.id:
+                    text.append(m)
             else:
-                text.append(messages[x])
+                text.append(m)
     return text
 
 
@@ -329,14 +329,12 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
                 if username is not False:
                     messages, channels = get_messages(username)
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
-                    for x in range(0, len(text_temp)):
-                        text.append(text_temp[x])
-
-        length = len(text)
+                    for m in text_temp:
+                        text.append(m)
 
         text1 = ""
-        for x in range(0, len(text)):
-            text1 += str(text[x]) + "\n"
+        for m in text:
+            text1 += str(m) + "\n"
 
         try:
             await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['building_markov'])
@@ -376,15 +374,14 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         username = opted_in(id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-            return await ctx.send()
         messages, channels = get_messages(username)
 
         text = []
         text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
 
         text1 = ""
-        for x in range(0, len(text)):
-            text1 += str(text[x]) + "\n"
+        for m in text:
+            text1 += str(m) + "\n"
 
         try:
             await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['building_markov'])
@@ -476,8 +473,8 @@ async def build_data_profile(name, member, guild):
     print("Initialising data tracking for " + name)
     for summer_channel in guild.text_channels:
         adding = True
-        for x in range(0, len(disabled_groups)):
-            if summer_channel.category.name.lower() == disabled_groups[x].lower():
+        for group in disabled_groups:
+            if summer_channel.category.name.lower() == group.lower():
                 adding = False
                 break
 
