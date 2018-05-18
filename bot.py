@@ -21,7 +21,7 @@ cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor()
 
 token = config['discord']['token']
-client = commands.Bot(command_prefix=config['discord']['prefix'])
+client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 disabled_groups = config['discord']['disabled_groups']
 
@@ -40,18 +40,6 @@ You also have the legal right to request your data is deleted at any point, whic
 
 Your data may also be stored on data centres around the world, due to our usage of Google Team Drive to share files. All exports of the data will also be deleted by all moderators, including exports stored on data centres used for backups as discussed.```
 """
-
-
-def is_owner():
-    """
-    Check used for commands which are owner only
-    """
-    def predicate(ctx):
-        if ctx.author.id == config['discord']['owner_id']:
-            return True
-        return False
-    return commands.check(predicate)
-
 
 @client.event
 async def on_ready():
@@ -97,7 +85,7 @@ async def on_message(message):
     return await client.process_commands(message)
 
 
-@is_owner()
+@commands.is_owner()
 @client.command()
 async def process_server(ctx):
     """
@@ -172,7 +160,7 @@ CREATE TABLE `%s` (
     await channel.send(strings['data_collection']['complete'].format(author.name))
 
 
-@is_owner()
+@commands.is_owner()
 @client.command()
 async def is_processed(ctx, user=None):
     """
