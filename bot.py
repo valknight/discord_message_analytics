@@ -169,10 +169,10 @@ async def is_processed(ctx, user=None):
     if user is None:
         user = ctx.author.name
 
-    await ctx.channel.send(strings['process_check']['status']['checking'])
+    await ctx.send(strings['process_check']['status']['checking'])
     if not opted_in(user=user):
-        return await ctx.channel.send(strings['process_check']['status']['not_opted_in'])
-    await ctx.channel.send(strings['process_check']['status']['opted_in'])
+        return await ctx.send(strings['process_check']['status']['not_opted_in'])
+    await ctx.send(strings['process_check']['status']['opted_in'])
     return
 
 
@@ -275,7 +275,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel
     Generates markov output based on entire server's messages.
     """
 
-    output = await ctx.channel.send(content=strings['markov']['title'] + strings['emojis']['markov'])
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
@@ -306,14 +306,14 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel
             # text_model = POSifiedText(text)
             text_model = markovify.NewlineText(text, state_size=3)
         except KeyError:
-            return ctx.channel.send('Not enough data yet, sorry!')
+            return ctx.send('Not enough data yet, sorry!')
         await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         text = text_model.make_short_sentence(140)
         attempt = 0
         while(True):
             attempt += 1
             if attempt >= 10:
-                return await ctx.channel.send(content=strings['markov']['errors']['failed_to_generate'])
+                return await ctx.send(strings['markov']['errors']['failed_to_generate'])
             message_formatted = str(text)
             if message_formatted != "None":
                 break
@@ -323,7 +323,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel
 
         em.set_footer(text=strings['markov']['output']['footer'])
         await output.delete()
-        output = await ctx.channel.send(embed=em, content=None)
+        output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(strings['emoji']['delete']) or "❌")
 
 
@@ -332,14 +332,14 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
     """
     Generates markov output for user who ran this command
     """
-    output = await ctx.channel.send(content=strings['markov']['title'] + strings['emojis']['markov'])
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
         username = opted_in(id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-            return await ctx.channel.send()
+            return await ctx.send()
         messages, channels = get_messages(username)
         text = []
 
@@ -360,7 +360,7 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
             # text_model = POSifiedText(text)
             text_model = markovify.NewlineText(text, state_size=3)
         except KeyError:
-            return ctx.channel.send('Not enough data yet, sorry!')
+            return ctx.send('Not enough data yet, sorry!')
 
         await output.edit(content=output.content + strings['emojis']['success'])
 
@@ -371,7 +371,7 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
             attempt += 1
             if attempt >= 10:
                 await output.delete()
-                return await ctx.channel.send(content=strings['markov']['errors']['failed_to_generate'])
+                return await ctx.send(strings['markov']['errors']['failed_to_generate'])
             new_sentance = text_model.make_short_sentence(140)
             message_formatted = str(new_sentance)
             if message_formatted != "None":
@@ -380,7 +380,7 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
         em = discord.Embed(title=str(ctx.message.author) + strings['emojis']['markov'], description=message_formatted)
         em.set_footer(text=strings['markov']['output']['footer'])
         await output.delete()
-    output = await ctx.channel.send(embed=em, content=None)
+    output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(strings['emojis']['delete']) or "❌")
 
 
@@ -402,7 +402,7 @@ async def blacklist(ctx, command=None, word=None):
     """
     await ctx.message.remove()
     if command is None:
-        return await ctx.channel.send(content="""
+        return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
 
 ?blacklist add [word] : Add word to blacklist
@@ -412,19 +412,19 @@ No subcommand selected - please enter a subcommand for your blacklist.
 
     if command == "add":
         if word is None:
-            return await ctx.channel.send(strings['blacklist']['status']['no_word'])
-        msg = await ctx.channel.send(content=strings['blacklist']['status']['adding'])
+            return await ctx.send(strings['blacklist']['status']['no_word'])
+        msg = await ctx.send(strings['blacklist']['status']['adding'])
         # TODO :Insert logic here
     elif command == "remove":
         if word is none:
-            return await ctx.channel.send(strings['blacklist']['status']['no_word'])
-        msg = await ctx.channel.send(content=strings['blacklist']['status']['removing'])
+            return await ctx.send(strings['blacklist']['status']['no_word'])
+        msg = await ctx.send(strings['blacklist']['status']['removing'])
         # TODO: Insert logic here
 
     elif command == "get":
-        await ctx.channel.send(content="#TODO")
+        await ctx.send("#TODO")
     else:
-        return await ctx.channel.send(content="""
+        return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
 
 ?blacklist add [word] : Add word to blacklist
