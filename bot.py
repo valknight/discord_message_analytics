@@ -238,16 +238,17 @@ def channel_allowed(id, existing_channel, nsfw=False):
         if str(channel.category).lower() == str(disabled_groups[x]).lower():
             return False
 
-    if nsfw:
-        if not existing_channel.is_nsfw():
-            return False
-        if channel.is_nsfw():
+    if not existing_channel.is_nsfw() and bool(nsfw):
+        return False
+
+    if channel.is_nsfw():
+        if bool(nsfw): # checks if user wants / is allowed explicit markovs
             return True
         else:
-            return False  # this is because if NSFW is true, we only want stuff from NSFW chats
-    else:
-        if channel.is_nsfw():
-            return False  # this is to prevent NSFW messages being included in SFW chats
+            return False
+    else: # channel is SFW
+        if bool(nsfw):
+            return False # this stops SFW chats from being included in NSFW markovs
 
     return True
 
@@ -270,7 +271,8 @@ async def save_markov(model, user_id):
     return
 
 
-async def build_messages(ctx, nsfw, messages, channels, selected_channel=None, text = []):
+async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
+    text = []
     """
         Returns/appends to a list messages from a user
         Params:
@@ -295,8 +297,10 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
     """
     Generates markov output based on entire server's messages.
     """
+    if (not ctx.message.channel.is_nsfw()) and nsfw:
+        return await ctx.send(strings['markov']['errors']['nsfw'].format(str(ctx.author)))
 
-    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
@@ -308,7 +312,9 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
                 username = opted_in(id=member.id)
                 if username is not False:
                     messages, channels = get_messages(username)
-                    text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel, text=text)
+                    text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
+                    for x in range(0, len(text_temp)):
+                        text.append(text_temp[x])
 
         length = len(text)
 
@@ -336,18 +342,26 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         em = discord.Embed(
             title=strings['markov']['output']['title_server'], description=message_formatted)
 
-        em.set_footer(text=strings['markov']['output']['footer'])
+        delete_emoji = client.get_emoji(int(strings['emojis']['delete']))
+        if delete_emoji is not None:
+            emoji_name = delete_emoji.name
+        else:
+            emoji_name = "❌"
+        em.set_footer(text=strings['markov']['output']['footer'].format(emoji_name))
         await output.delete()
         output = await ctx.send(embed=em)
-    return await delete_option(client, ctx, output, client.get_emoji(strings['emoji']['delete']) or "❌")
+    return await delete_option(client, ctx, output, delete_emoji or "❌")
 
 
 @client.command()
-async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
+async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output for user who ran this command
     """
-    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
+    if (not ctx.message.channel.is_nsfw()) and nsfw:
+        return await ctx.send(strings['markov']['errors']['nsfw'].format(str(ctx.author)))
+
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
@@ -357,6 +371,7 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
             return await ctx.send()
         messages, channels = get_messages(username)
 
+        text = []
         text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
 
         text1 = ""
@@ -386,10 +401,15 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
                 break
 
         em = discord.Embed(title=str(ctx.message.author) + strings['emojis']['markov'], description=message_formatted)
-        em.set_footer(text=strings['markov']['output']['footer'])
+        delete_emoji = client.get_emoji(int(strings['emojis']['delete']))
+        if delete_emoji is not None:
+            emoji_name = delete_emoji.name
+        else:
+            emoji_name = "❌"
+        em.set_footer(text=strings['markov']['output']['footer'].format(emoji_name))
         await output.delete()
     output = await ctx.send(embed=em)
-    return await delete_option(client, ctx, output, client.get_emoji(strings['emojis']['delete']) or "❌")
+    return await delete_option(client, ctx, output, delete_emoji or "❌")
 
 
 async def get_blacklist(user_id):
