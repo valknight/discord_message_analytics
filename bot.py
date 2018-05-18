@@ -21,7 +21,7 @@ cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor()
 
 token = config['discord']['token']
-client = commands.Bot(command_prefix=config['discord']['prefix'])
+client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 disabled_groups = config['discord']['disabled_groups']
 
@@ -40,18 +40,6 @@ You also have the legal right to request your data is deleted at any point, whic
 
 Your data may also be stored on data centres around the world, due to our usage of Google Team Drive to share files. All exports of the data will also be deleted by all moderators, including exports stored on data centres used for backups as discussed.```
 """
-
-
-def is_owner():
-    """
-    Check used for commands which are owner only
-    """
-    def predicate(ctx):
-        if ctx.author.id == config['discord']['owner_id']:
-            return True
-        return False
-    return commands.check(predicate)
-
 
 @client.event
 async def on_ready():
@@ -97,7 +85,7 @@ async def on_message(message):
     return await client.process_commands(message)
 
 
-@is_owner()
+@commands.is_owner()
 @client.command()
 async def process_server(ctx):
     """
@@ -172,7 +160,7 @@ CREATE TABLE `%s` (
     await channel.send(strings['data_collection']['complete'].format(author.name))
 
 
-@is_owner()
+@commands.is_owner()
 @client.command()
 async def is_processed(ctx, user=None):
     """
@@ -181,10 +169,10 @@ async def is_processed(ctx, user=None):
     if user is None:
         user = ctx.author.name
 
-    await ctx.channel.send(strings['process_check']['status']['checking'])
+    await ctx.send(strings['process_check']['status']['checking'])
     if not opted_in(user=user):
-        return await ctx.channel.send(strings['process_check']['status']['not_opted_in'])
-    await ctx.channel.send(strings['process_check']['status']['opted_in'])
+        return await ctx.send(strings['process_check']['status']['not_opted_in'])
+    await ctx.send(strings['process_check']['status']['opted_in'])
     return
 
 
@@ -235,19 +223,6 @@ def get_messages(table_name):
     return messages, channels
 
 
-def get_channel(id):
-    """
-    Get channel from one of the servers the bot is in
-    ID: Channel ID
-    Returns channel object, or None if channel does not exist
-    """
-    for server in client.guilds:
-        for channel in server.channels:
-            if str(channel.id) == str(id):
-                return channel
-    return None
-
-
 def channel_allowed(id, existing_channel, nsfw=False):
     """
     Check if a channel is allowed in current context
@@ -256,7 +231,7 @@ def channel_allowed(id, existing_channel, nsfw=False):
     existing_channel: channel object of existing channel
     nsfw: whether to only return NSFW channels
     """
-    channel = get_channel(int(id))
+    channel = client.get_channel(int(id))
 
     for x in range(0, len(disabled_groups)):
         if str(channel.category).lower() == str(disabled_groups[x]).lower():
@@ -295,21 +270,16 @@ async def save_markov(model, user_id):
 
 
 @client.command()
-async def markov_server(ctx, nsfw=0, selected_channel=None):
+async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel=None):
     """
     Generates markov output based on entire server's messages.
     """
 
-    output = await ctx.channel.send(content=strings['markov']['title'] + strings['emojis']['markov'])
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
         text = []
-        if nsfw == "True":
-            nsfw = True
-        elif nsfw == "False":
-            nsfw = False
-        nsfw = bool(nsfw)
 
         print(selected_channel)
         for server in client.guilds:
@@ -320,7 +290,7 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
                     for x in range(0, len(messages)):
                         if channel_allowed(channels[x], ctx.message.channel, nsfw):
                             if selected_channel is not None:
-                                if get_channel(int(channels[x])).name == selected_channel:
+                                if client.get_channel(int(channels[x])).id == selected_channel.id:
                                     text.append(messages[x])
                             else:
                                 text.append(messages[x])
@@ -336,14 +306,14 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
             # text_model = POSifiedText(text)
             text_model = markovify.NewlineText(text, state_size=3)
         except KeyError:
-            return ctx.channel.send('Not enough data yet, sorry!')
+            return ctx.send('Not enough data yet, sorry!')
         await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         text = text_model.make_short_sentence(140)
         attempt = 0
         while(True):
             attempt += 1
             if attempt >= 10:
-                return await ctx.channel.send(content=strings['markov']['errors']['failed_to_generate'])
+                return await ctx.send(strings['markov']['errors']['failed_to_generate'])
             message_formatted = str(text)
             if message_formatted != "None":
                 break
@@ -353,31 +323,30 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
 
         em.set_footer(text=strings['markov']['output']['footer'])
         await output.delete()
-        output = await ctx.channel.send(embed=em, content=None)
+        output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(strings['emoji']['delete']) or "❌")
 
 
 @client.command()
-async def markov(ctx, nsfw=0, selected_channel=None):
+async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
     """
     Generates markov output for user who ran this command
     """
-    output = await ctx.channel.send(content=strings['markov']['title'] + strings['emojis']['markov'])
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
         username = opted_in(id=ctx.author.id)
-        nsfw = bool(nsfw)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-            return await ctx.channel.send()
+            return await ctx.send()
         messages, channels = get_messages(username)
         text = []
 
         for x in range(0, len(messages)):
             if channel_allowed(channels[x], ctx.message.channel, nsfw):
                 if selected_channel is not None:
-                    if get_channel(int(channels[x])).name == selected_channel:
+                    if client.get_channel(int(channels[x])).id == selected_channel.id:
                         text.append(messages[x])
                 else:
                     text.append(messages[x])
@@ -391,7 +360,7 @@ async def markov(ctx, nsfw=0, selected_channel=None):
             # text_model = POSifiedText(text)
             text_model = markovify.NewlineText(text, state_size=3)
         except KeyError:
-            return ctx.channel.send('Not enough data yet, sorry!')
+            return ctx.send('Not enough data yet, sorry!')
 
         await output.edit(content=output.content + strings['emojis']['success'])
 
@@ -402,7 +371,7 @@ async def markov(ctx, nsfw=0, selected_channel=None):
             attempt += 1
             if attempt >= 10:
                 await output.delete()
-                return await ctx.channel.send(content=strings['markov']['errors']['failed_to_generate'])
+                return await ctx.send(strings['markov']['errors']['failed_to_generate'])
             new_sentance = text_model.make_short_sentence(140)
             message_formatted = str(new_sentance)
             if message_formatted != "None":
@@ -411,7 +380,7 @@ async def markov(ctx, nsfw=0, selected_channel=None):
         em = discord.Embed(title=str(ctx.message.author) + strings['emojis']['markov'], description=message_formatted)
         em.set_footer(text=strings['markov']['output']['footer'])
         await output.delete()
-    output = await ctx.channel.send(embed=em, content=None)
+    output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(strings['emojis']['delete']) or "❌")
 
 
@@ -433,7 +402,7 @@ async def blacklist(ctx, command=None, word=None):
     """
     await ctx.message.remove()
     if command is None:
-        return await ctx.channel.send(content="""
+        return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
 
 ?blacklist add [word] : Add word to blacklist
@@ -443,19 +412,19 @@ No subcommand selected - please enter a subcommand for your blacklist.
 
     if command == "add":
         if word is None:
-            return await ctx.channel.send(strings['blacklist']['status']['no_word'])
-        msg = await ctx.channel.send(content=strings['blacklist']['status']['adding'])
+            return await ctx.send(strings['blacklist']['status']['no_word'])
+        msg = await ctx.send(strings['blacklist']['status']['adding'])
         # TODO :Insert logic here
     elif command == "remove":
         if word is none:
-            return await ctx.channel.send(strings['blacklist']['status']['no_word'])
-        msg = await ctx.channel.send(content=strings['blacklist']['status']['removing'])
+            return await ctx.send(strings['blacklist']['status']['no_word'])
+        msg = await ctx.send(strings['blacklist']['status']['removing'])
         # TODO: Insert logic here
 
     elif command == "get":
-        await ctx.channel.send(content="#TODO")
+        await ctx.send("#TODO")
     else:
-        return await ctx.channel.send(content="""
+        return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
 
 ?blacklist add [word] : Add word to blacklist
