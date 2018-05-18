@@ -397,6 +397,9 @@ async def get_blacklist(user_id):
     cursor.execute(get, (user_id, ))
     resultset = cursor.fetchall()
 	if len(resultset) == 0:
+		#add a blank blacklist
+		set = "INSET INTO blacklists (user_id, blacklist) VALUES (%s, '[]')"
+		cursor.execute(set, (user_id, ))
 		return []
     return json.loads(resultset[0])
 
@@ -424,13 +427,23 @@ No subcommand selected - please enter a subcommand for your blacklist.
         if word is None:
             return await ctx.send(strings['blacklist']['status']['no_word'])
         msg = await ctx.send(strings['blacklist']['status']['adding'])
-        # TODO :Insert logic here
+		id = ctx.message.author.id
 		# fetch the current blacklist
-		# split the words if there are more than one(or maybe only allow one at a time)
-		# for each word
-			#check if the word is already on the list. throw error if it is
+		blackL = get_blacklist(id)
+		exists = True
+		if blackL == []:
+			exists = False
+		#check if the word is already on the list. throw error if it is
+		if word != blackL:
 			# if its not then add it
-		# update DB with new list
+			blackL.append(word)
+			# update DB with new list
+			new_json = json.dumps(blackL)
+			set = "UPDATE blacklists SET blacklist = %s WHERE user_id = %s"
+			cursor.execute(set, (new_json, user_id, ))
+			await ctx.send(strings['blacklist']['status']['complete'])
+		else:
+			await ctx.send(strings['blacklist']['status']['exist'])
     elif command == "remove":
         if word is none:
             return await ctx.send(strings['blacklist']['status']['no_word'])
