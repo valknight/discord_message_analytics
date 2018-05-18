@@ -292,6 +292,22 @@ async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
     return text
 
 
+async def get_delete_emoji():
+    delete_emoji = client.get_emoji(int(strings['emojis']['delete']))
+    if delete_emoji is not None:
+        emoji_name = delete_emoji.name
+    else:
+        emoji_name = "❌"
+    return emoji_name
+
+
+async def markov_embed(title, message):
+    em = discord.Embed(title=title, description=message)
+    name = await get_delete_emoji()
+    em.set_footer(text=strings['markov']['output']['footer'].format(name))
+    return em
+
+
 @client.command()
 async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
@@ -339,18 +355,10 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
             if message_formatted != "None":
                 break
 
-        em = discord.Embed(
-            title=strings['markov']['output']['title_server'], description=message_formatted)
-
-        delete_emoji = client.get_emoji(int(strings['emojis']['delete']))
-        if delete_emoji is not None:
-            emoji_name = delete_emoji.name
-        else:
-            emoji_name = "❌"
-        em.set_footer(text=strings['markov']['output']['footer'].format(emoji_name))
         await output.delete()
+        em = await markov_embed(strings['markov']['output']['title_server'], message_formatted)
         output = await ctx.send(embed=em)
-    return await delete_option(client, ctx, output, delete_emoji or "❌")
+    return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
 @client.command()
@@ -399,17 +407,11 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
             message_formatted = str(new_sentance)
             if message_formatted != "None":
                 break
-
-        em = discord.Embed(title=str(ctx.message.author) + strings['emojis']['markov'], description=message_formatted)
-        delete_emoji = client.get_emoji(int(strings['emojis']['delete']))
-        if delete_emoji is not None:
-            emoji_name = delete_emoji.name
-        else:
-            emoji_name = "❌"
-        em.set_footer(text=strings['markov']['output']['footer'].format(emoji_name))
+        
         await output.delete()
-    output = await ctx.send(embed=em)
-    return await delete_option(client, ctx, output, delete_emoji or "❌")
+        em = await markov_embed(str(ctx.author), message_formatted)
+        output = await ctx.send(embed=em)
+    return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
 async def get_blacklist(user_id):
@@ -513,4 +515,7 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=60):
         return await message.edit(embed=em)
     except:
         await message.remove_reaction(delete_emoji, bot.user)
-client.run(token)
+
+
+if __name__=="__main__":
+    client.run(token)
