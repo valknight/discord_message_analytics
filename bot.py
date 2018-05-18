@@ -177,7 +177,7 @@ async def is_processed(ctx, user=None):
     return
 
 
-def opted_in(user=None, id=None):
+def opted_in(user=None, user_id=None):
     """
     ID takes priority over user if provided
 
@@ -186,11 +186,11 @@ def opted_in(user=None, id=None):
 
     Returns true if user is opted in, false if not
     """
-    if id is None:
+    if user_id is None:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `username`=%s;"
     else:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
-        user = id
+        user = user_id
 
     cursor.execute(get_user, (user, ))
     results = cursor.fetchall()
@@ -224,15 +224,15 @@ def get_messages(table_name):
     return messages, channels
 
 
-def channel_allowed(id, existing_channel, nsfw=False):
+def channel_allowed(channel_id, existing_channel, nsfw=False):
     """
     Check if a channel is allowed in current context
 
-    id: ID of channel
+    channel_id: ID of channel
     existing_channel: channel object of existing channel
     nsfw: whether to only return NSFW channels
     """
-    channel = client.get_channel(int(id))
+    channel = client.get_channel(int(channel_id))
 
     for group in disabled_groups:
         if str(channel.category).lower() == str(group).lower():
@@ -242,10 +242,8 @@ def channel_allowed(id, existing_channel, nsfw=False):
         return False
 
     if channel.is_nsfw():
-        if bool(nsfw): # checks if user wants / is allowed explicit markovs
-            return True
-        else:
-            return False
+        return bool(nsfw) # checks if user wants / is allowed explicit markovs
+        # this means that if the channel *is* NSFW, we return True, but if it isn't, we return False
     else: # channel is SFW
         if bool(nsfw):
             return False # this stops SFW chats from being included in NSFW markovs
