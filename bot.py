@@ -31,7 +31,7 @@ add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (
 
 opt_in_message = """
 We want to protect your information, and therefore you need to read the following in detail. We keep it brief as a lot of this is important for you to know incase you change your mind in the future.
-			```
+            ```
 By proceeding with using this command, you agree for us to permanently store your data outside of Discord on a server located within Europe. This data will be used for data analysis and research purposes. Due to the worldwide nature of our team it may be transferred back out of the EU.
 
 As per the GDPR, if you are under 18, please do not run this command, as data collection from minors is a big legal issue we don't want to get into. Sorry!
@@ -40,6 +40,7 @@ You also have the legal right to request your data is deleted at any point, whic
 
 Your data may also be stored on data centres around the world, due to our usage of Google Team Drive to share files. All exports of the data will also be deleted by all moderators, including exports stored on data centres used for backups as discussed.```
 """
+
 
 @client.event
 async def on_ready():
@@ -145,7 +146,7 @@ CREATE TABLE `%s` (
   `contents` longtext COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-		"""
+        """
 
         try:
             cursor.execute(create_table, (username, ))
@@ -269,8 +270,28 @@ async def save_markov(model, user_id):
     return
 
 
+async def build_messages(ctx, nsfw, messages, channels, selected_channel=None, text = []):
+    """
+        Returns/appends to a list messages from a user
+        Params:
+        messages: list of messages
+        channel: list of channels for messages
+        selected_channel: Not required, but channel to filter to. If none, filtering is disabled.
+        text = list of text that already exists. If not set, we just create one
+    """
+    for x in range(0, len(messages)):
+
+        if channel_allowed(channels[x], ctx.message.channel, nsfw):
+            if selected_channel is not None:
+                if client.get_channel(int(channels[x])).id == selected_channel.id:
+                    text.append(messages[x])
+            else:
+                text.append(messages[x])
+    return text
+
+
 @client.command()
-async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel=None):
+async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output based on entire server's messages.
     """
@@ -287,13 +308,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel
                 username = opted_in(id=member.id)
                 if username is not False:
                     messages, channels = get_messages(username)
-                    for x in range(0, len(messages)):
-                        if channel_allowed(channels[x], ctx.message.channel, nsfw):
-                            if selected_channel is not None:
-                                if client.get_channel(int(channels[x])).id == selected_channel.id:
-                                    text.append(messages[x])
-                            else:
-                                text.append(messages[x])
+                    text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel, text=text)
 
         length = len(text)
 
@@ -328,7 +343,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel
 
 
 @client.command()
-async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
+async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
     """
     Generates markov output for user who ran this command
     """
@@ -341,15 +356,8 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
             return await ctx.send()
         messages, channels = get_messages(username)
-        text = []
 
-        for x in range(0, len(messages)):
-            if channel_allowed(channels[x], ctx.message.channel, nsfw):
-                if selected_channel is not None:
-                    if client.get_channel(int(channels[x])).id == selected_channel.id:
-                        text.append(messages[x])
-                else:
-                    text.append(messages[x])
+        text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
 
         text1 = ""
         for x in range(0, len(text)):
@@ -408,7 +416,7 @@ No subcommand selected - please enter a subcommand for your blacklist.
 ?blacklist add [word] : Add word to blacklist
 ?blacklist remove [word] : Remove word from blacklist
 ?blacklist get : Get PM of current blacklist
-			""")
+            """)
 
     if command == "add":
         if word is None:
@@ -430,7 +438,7 @@ No subcommand selected - please enter a subcommand for your blacklist.
 ?blacklist add [word] : Add word to blacklist
 ?blacklist remove [word] : Remove word from blacklist
 ?blacklist get : Get PM of current blacklist
-			""")
+            """)
 
     await msg.edit(content=strings['blacklist']['status']['complete'])
 
