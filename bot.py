@@ -223,19 +223,6 @@ def get_messages(table_name):
     return messages, channels
 
 
-def get_channel(id):
-    """
-    Get channel from one of the servers the bot is in
-    ID: Channel ID
-    Returns channel object, or None if channel does not exist
-    """
-    for server in client.guilds:
-        for channel in server.channels:
-            if str(channel.id) == str(id):
-                return channel
-    return None
-
-
 def channel_allowed(id, existing_channel, nsfw=False):
     """
     Check if a channel is allowed in current context
@@ -244,7 +231,7 @@ def channel_allowed(id, existing_channel, nsfw=False):
     existing_channel: channel object of existing channel
     nsfw: whether to only return NSFW channels
     """
-    channel = get_channel(int(id))
+    channel = client.get_channel(int(id))
 
     for x in range(0, len(disabled_groups)):
         if str(channel.category).lower() == str(disabled_groups[x]).lower():
@@ -283,7 +270,7 @@ async def save_markov(model, user_id):
 
 
 @client.command()
-async def markov_server(ctx, nsfw=0, selected_channel=None):
+async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.Channel=None):
     """
     Generates markov output based on entire server's messages.
     """
@@ -293,11 +280,6 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
         text = []
-        if nsfw == "True":
-            nsfw = True
-        elif nsfw == "False":
-            nsfw = False
-        nsfw = bool(nsfw)
 
         print(selected_channel)
         for server in client.guilds:
@@ -308,7 +290,7 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
                     for x in range(0, len(messages)):
                         if channel_allowed(channels[x], ctx.message.channel, nsfw):
                             if selected_channel is not None:
-                                if get_channel(int(channels[x])).name == selected_channel:
+                                if client.get_channel(int(channels[x])).id == selected_channel.id:
                                     text.append(messages[x])
                             else:
                                 text.append(messages[x])
@@ -346,7 +328,7 @@ async def markov_server(ctx, nsfw=0, selected_channel=None):
 
 
 @client.command()
-async def markov(ctx, nsfw=0, selected_channel=None):
+async def markov(ctx, nsfw: bool=0, selected_channel: discord.Channel=None):
     """
     Generates markov output for user who ran this command
     """
@@ -355,7 +337,6 @@ async def markov(ctx, nsfw=0, selected_channel=None):
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
         username = opted_in(id=ctx.author.id)
-        nsfw = bool(nsfw)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
             return await ctx.channel.send()
@@ -365,7 +346,7 @@ async def markov(ctx, nsfw=0, selected_channel=None):
         for x in range(0, len(messages)):
             if channel_allowed(channels[x], ctx.message.channel, nsfw):
                 if selected_channel is not None:
-                    if get_channel(int(channels[x])).name == selected_channel:
+                    if client.get_channel(int(channels[x])).id == selected_channel.id:
                         text.append(messages[x])
                 else:
                     text.append(messages[x])
