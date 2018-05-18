@@ -7,7 +7,7 @@ import mysql.connector
 import re
 import time
 import sys
-
+import concurrent
 
 config_f = open("config.json")
 config = json.load(config_f)
@@ -272,7 +272,6 @@ async def save_markov(model, user_id):
 
 
 async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
-    text = []
     """
         Returns/appends to a list messages from a user
         Params:
@@ -281,6 +280,7 @@ async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
         selected_channel: Not required, but channel to filter to. If none, filtering is disabled.
         text = list of text that already exists. If not set, we just create one
     """
+    text = []
     for counter, m in enumerate(messages):
 
         if channel_allowed(channels[counter], ctx.message.channel, nsfw):
@@ -510,7 +510,7 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=60):
                            " deleted message", description="User deleted this message.")
 
         return await message.edit(embed=em)
-    except:
+    except concurrent.futures._base.TimeoutError:
         await message.remove_reaction(delete_emoji, bot.user)
 
 
