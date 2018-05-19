@@ -13,6 +13,9 @@ from config import config, strings
 
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
+add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
+add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
+
 cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor()
 
@@ -505,13 +508,6 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
 if __name__=="__main__":
     token = config['discord']['token']
     __version__ = "0.1.1"
-    
-
-    disabled_groups = config['discord']['disabled_groups']
-
-    add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
-    add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
     if config['version']!=__version__:
         if config['version_check']:
@@ -519,5 +515,7 @@ if __name__=="__main__":
             sys.exit(1)
         else:
             print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
-
+    
+    disabled_groups = config['discord']['disabled_groups']
+    
     client.run(token)
