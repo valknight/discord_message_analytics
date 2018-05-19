@@ -11,11 +11,11 @@ config = json.load(config_f)
 # Setup discord.py + requirements
 print("Installing discord.py...")
 os.system(discordpy_command)
-print("\n\n\nInstalling other requirements...")
+print("\nInstalling other requirements...")
 os.system(requirements)
 
 # Database
-print("\n\n\nSetting up database")
+print("\nSetting up database")
 
 print("Connecting to DB...")
 cnx = mysql.connector.connect(**config['mysql'])
@@ -50,10 +50,27 @@ CREATE TABLE `markovs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 """
 
-print("Creating users table")
-cursor.execute(users)
-print("Creating messages table")
-cursor.execute(messages)
-print("Creating markovs table")
-cursor.execute(markovs)
-print("Done!")
+blocklist = """
+CREATE TABLE `blocklists` (
+  `user_id` varchar(64) NOT NULL,
+  `blocklist` longtext NOT NULL,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+"""
+
+def make_table(query):
+  try:
+    cursor.execute(query)
+  except mysql.connector.errors.ProgrammingError:
+    print("Already exists")
+
+print("\nCreating users table")
+make_table(users)
+print("\nCreating messages table")
+make_table(messages)
+print("\nCreating markovs table")
+make_table(markovs)
+print("\nCreating blocklist table")
+make_table(blocklist)
+print("\nDone!")
