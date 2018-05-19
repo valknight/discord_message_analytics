@@ -410,7 +410,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
                 break
         
         await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
-        save_markov(text_model, ctx.author.id)
+        await save_markov(text_model, ctx.author.id)
         
         await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         await output.delete()
