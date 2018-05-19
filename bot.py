@@ -1,5 +1,6 @@
 import datetime
 import discord
+from discord.ext import commands
 import json
 import markovify
 import math
@@ -7,27 +8,28 @@ import mysql.connector
 import re
 import time
 import sys
+import concurrent
+from config import config, strings
 
+client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
-config_f = open("config.json")
-config = json.load(config_f)
+token = config['discord']['token']
+__version__ = "0.1.1"
 
-strings_f = open("strings.json")
-strings = json.load(strings_f)[config['language']]
-
-from discord.ext import commands
+if config['version']!=__version__:
+    if config['version_check']:
+        print(strings['config_invalid'].format(__version__, str(config['version'])))
+        sys.exit(1)
+    else:
+        print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
+    
+disabled_groups = config['discord']['disabled_groups']
+    
+add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
+add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
 cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor()
-
-token = config['discord']['token']
-client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
-
-disabled_groups = config['discord']['disabled_groups']
-
-add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
-add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
 opt_in_message = """
 We want to protect your information, and therefore you need to read the following in detail. We keep it brief as a lot of this is important for you to know incase you change your mind in the future.
@@ -40,6 +42,7 @@ You also have the legal right to request your data is deleted at any point, whic
 
 Your data may also be stored on data centres around the world, due to our usage of Google Team Drive to share files. All exports of the data will also be deleted by all moderators, including exports stored on data centres used for backups as discussed.```
 """
+
 
 
 @client.event
@@ -56,7 +59,7 @@ async def on_ready():
 
     for server in client.guilds:
         for member in server.members:
-            name = opted_in(id=member.id)
+            name = opted_in(user_id=member.id)
             if name is not False:
                 await build_data_profile(name, member, server)
 
@@ -65,7 +68,7 @@ async def on_ready():
 async def on_message(message):
     # this set of code in on_message is used to save incoming new messages
     channel = message.channel
-    user_exp = opted_in(id=message.author.id)
+    user_exp = opted_in(user_id=message.author.id)
 
     if user_exp is not False:
         is_allowed = channel_allowed(
@@ -139,13 +142,13 @@ async def experiments(ctx):
 
         cursor.execute(opt_in_user, (author.id, ))
         create_table = """
-CREATE TABLE `%s` (
-  `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `channel_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `time` timestamp NULL DEFAULT NULL,
-  `contents` longtext COLLATE utf8mb4_unicode_ci,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        CREATE TABLE `%s` (
+            `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `channel_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+            `time` timestamp NULL DEFAULT NULL,
+            `contents` longtext COLLATE utf8mb4_unicode_ci,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
 
         try:
@@ -154,7 +157,7 @@ CREATE TABLE `%s` (
         except mysql.connector.errors.ProgrammingError:
             await channel.send(strings['data_collection']['update_record'].format(username))
 
-    name = opted_in(id=message.author.id)
+    name = opted_in(user_id=message.author.id)
 
     await channel.send(strings['data_collection']['data_track_start'])
     await build_data_profile(name, author, message.guild)
@@ -177,7 +180,7 @@ async def is_processed(ctx, user=None):
     return
 
 
-def opted_in(user=None, id=None):
+def opted_in(user=None, user_id=None):
     """
     ID takes priority over user if provided
 
@@ -186,11 +189,11 @@ def opted_in(user=None, id=None):
 
     Returns true if user is opted in, false if not
     """
-    if id is None:
+    if user_id is None:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `username`=%s;"
     else:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
-        user = id
+        user = user_id
 
     cursor.execute(get_user, (user, ))
     results = cursor.fetchall()
@@ -217,37 +220,36 @@ def get_messages(table_name):
     messages = []
     channels = []
 
-    for x in range(0, len(results)):
-        messages.append(results[x][0])
-        channels.append(results[x][1])
+    for result in results:
+        messages.append(result[0])
+        channels.append(result[1])
 
     return messages, channels
 
 
-def channel_allowed(id, existing_channel, nsfw=False):
+def channel_allowed(channel_id, existing_channel, nsfw=False):
     """
     Check if a channel is allowed in current context
 
-    id: ID of channel
+    channel_id: ID of channel
     existing_channel: channel object of existing channel
     nsfw: whether to only return NSFW channels
     """
-    channel = client.get_channel(int(id))
+    channel = client.get_channel(int(channel_id))
 
-    for x in range(0, len(disabled_groups)):
-        if str(channel.category).lower() == str(disabled_groups[x]).lower():
+    for group in disabled_groups:
+        if str(channel.category).lower() == str(group).lower():
             return False
 
-    if nsfw:
-        if not existing_channel.is_nsfw():
-            return False
-        if channel.is_nsfw():
-            return True
-        else:
-            return False  # this is because if NSFW is true, we only want stuff from NSFW chats
-    else:
-        if channel.is_nsfw():
-            return False  # this is to prevent NSFW messages being included in SFW chats
+    if not existing_channel.is_nsfw() and bool(nsfw):
+        return False
+
+    if channel.is_nsfw():
+        return bool(nsfw) # checks if user wants / is allowed explicit markovs
+        # this means that if the channel *is* NSFW, we return True, but if it isn't, we return False
+    else: # channel is SFW
+        if bool(nsfw):
+            return False # this stops SFW chats from being included in NSFW markovs
 
     return True
 
@@ -270,7 +272,7 @@ async def save_markov(model, user_id):
     return
 
 
-async def build_messages(ctx, nsfw, messages, channels, selected_channel=None, text = []):
+async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
     """
         Returns/appends to a list messages from a user
         Params:
@@ -279,24 +281,43 @@ async def build_messages(ctx, nsfw, messages, channels, selected_channel=None, t
         selected_channel: Not required, but channel to filter to. If none, filtering is disabled.
         text = list of text that already exists. If not set, we just create one
     """
-    for x in range(0, len(messages)):
+    text = []
+    for counter, m in enumerate(messages):
 
-        if channel_allowed(channels[x], ctx.message.channel, nsfw):
+        if channel_allowed(channels[counter], ctx.message.channel, nsfw):
             if selected_channel is not None:
-                if client.get_channel(int(channels[x])).id == selected_channel.id:
-                    text.append(messages[x])
+                if client.get_channel(int(channels[counter])).id == selected_channel.id:
+                    text.append(m)
             else:
-                text.append(messages[x])
+                text.append(m)
     return text
 
 
-@client.command()
+async def get_delete_emoji():
+    delete_emoji = client.get_emoji(int(strings['emojis']['delete']))
+    if delete_emoji is not None:
+        emoji_name = delete_emoji.name
+    else:
+        emoji_name = "❌"
+    return emoji_name
+
+
+async def markov_embed(title, message):
+    em = discord.Embed(title=title, description=message)
+    name = await get_delete_emoji()
+    em.set_footer(text=strings['markov']['output']['footer'].format(name))
+    return em
+
+
+@client.command(aliases=["m_s"])
 async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output based on entire server's messages.
     """
+    if (not ctx.message.channel.is_nsfw()) and nsfw:
+        return await ctx.send(strings['markov']['errors']['nsfw'].format(str(ctx.author)))
 
-    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
@@ -305,16 +326,16 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         print(selected_channel)
         for server in client.guilds:
             for member in server.members:
-                username = opted_in(id=member.id)
+                username = opted_in(user_id=member.id)
                 if username is not False:
                     messages, channels = get_messages(username)
-                    text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel, text=text)
-
-        length = len(text)
+                    text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
+                    for m in text_temp:
+                        text.append(m)
 
         text1 = ""
-        for x in range(0, len(text)):
-            text1 += str(text[x]) + "\n"
+        for m in text:
+            text1 += str(m) + "\n"
 
         try:
             await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['building_markov'])
@@ -333,35 +354,36 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
             if message_formatted != "None":
                 break
 
-        em = discord.Embed(
-            title=strings['markov']['output']['title_server'], description=message_formatted)
-
-        em.set_footer(text=strings['markov']['output']['footer'])
         await output.delete()
+        em = await markov_embed(strings['markov']['output']['title_server'], message_formatted)
         output = await ctx.send(embed=em)
-    return await delete_option(client, ctx, output, client.get_emoji(strings['emoji']['delete']) or "❌")
+    return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
-@client.command()
-async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
+@client.command(aliases=["m"])
+async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output for user who ran this command
     """
-    output = await ctx.send(strings['markov']['title'] + strings['emojis']['markov'])
+    if (not ctx.message.channel.is_nsfw()) and nsfw:
+        return await ctx.send(strings['markov']['errors']['nsfw'].format(str(ctx.author)))
+
+    output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
-        username = opted_in(id=ctx.author.id)
+        username = opted_in(user_id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-            return await ctx.send()
         messages, channels = get_messages(username)
+
+        text = []
 
         text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
 
         text1 = ""
-        for x in range(0, len(text)):
-            text1 += str(text[x]) + "\n"
+        for m in text:
+            text1 += str(m) + "\n"
 
         try:
             await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['building_markov'])
@@ -370,11 +392,7 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
         except KeyError:
             return ctx.send('Not enough data yet, sorry!')
 
-        await output.edit(content=output.content + strings['emojis']['success'])
-
         attempt = 0
-        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
-
         while(True):
             attempt += 1
             if attempt >= 10:
@@ -384,12 +402,16 @@ async def markov(ctx, nsfw: bool=0, selected_channel: discord.TextChannel=None):
             message_formatted = str(new_sentance)
             if message_formatted != "None":
                 break
-
-        em = discord.Embed(title=str(ctx.message.author) + strings['emojis']['markov'], description=message_formatted)
-        em.set_footer(text=strings['markov']['output']['footer'])
+        
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
+        await save_markov(text_model, ctx.author.id)
+        
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         await output.delete()
-    output = await ctx.send(embed=em)
-    return await delete_option(client, ctx, output, client.get_emoji(strings['emojis']['delete']) or "❌")
+        
+        em = await markov_embed(str(ctx.author), message_formatted)
+        output = await ctx.send(embed=em)
+    return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
 async def get_blacklist(user_id):
@@ -496,8 +518,8 @@ async def build_data_profile(name, member, guild):
     print("Initialising data tracking for " + name)
     for summer_channel in guild.text_channels:
         adding = True
-        for x in range(0, len(disabled_groups)):
-            if summer_channel.category.name.lower() == disabled_groups[x].lower():
+        for group in disabled_groups:
+            if summer_channel.category.name.lower() == group.lower():
                 adding = False
                 break
 
@@ -517,7 +539,7 @@ async def build_data_profile(name, member, guild):
             cnx.commit()
 
 
-async def delete_option(bot, ctx, message, delete_emoji, timeout=60):
+async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord']['delete_timeout']):
     """Utility function that allows for you to add a delete option to the end of a command.
     This makes it easier for users to control the output of commands, esp handy for random output ones."""
     await message.add_reaction(delete_emoji)
@@ -533,6 +555,9 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=60):
                            " deleted message", description="User deleted this message.")
 
         return await message.edit(embed=em)
-    except:
+    except concurrent.futures._base.TimeoutError:
         await message.remove_reaction(delete_emoji, bot.user)
-client.run(token)
+
+
+if __name__=="__main__":
+    client.run(token)

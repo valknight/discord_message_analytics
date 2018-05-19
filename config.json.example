@@ -1,6 +1,8 @@
 {
-  "version": 0.1,
+  "version": "0.1.1",
+  "version_check": true,
   "discord": {
+    "delete_timeout": 60,
     "owner_id": 0123456789,
     "token": "insert_your_token_here",
     "prefix": "?",

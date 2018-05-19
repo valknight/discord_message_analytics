@@ -1,9 +1,11 @@
 {
   "english": {
+    "config_invalid" : "Version set to {}, but config is made for {}\nPlease check the new example config, and check you aren't missing any new values.",
+    "config_invalid_ignored" : "Version set to {}, but config is made for {}\nWe're ignoring it, as you have this set in your config, but please for the love of god don't do this",
     "delete_message_title": "{} deleted message",
     "delete_message_desc": "User deleted this message.",
     "emojis": {
-      "delete": 434748743871365100,
+      "delete": 434748743871365130,
       "loading": "<a:zmegathink:412052452582359041>",
       "success": ":white_check_mark:",
       "reasurrance": ":thumbsup:",
@@ -19,10 +21,11 @@
       },
       "errors": {
         "failed_to_generate": "Failed to generate markov chain",
-        "not_opted_in": ":exclamation: \n Sorry, you need to be opted in to use GSS experiments. Use ?experiments in #bot_spam to get started."
+        "not_opted_in": ":exclamation: \n Sorry, you need to be opted in to use GSS experiments. Use ?experiments in #bot_spam to get started.",
+        "nsfw": "{} - You cannot make a NSFW markov in a SFW chat"
       },
       "output": {
-        "footer": "This is an automated message based off the users comments. To delete, someone click the \"oof\"",
+        "footer": "This is an automated message based off the users comments. To delete, click the \"{}\"",
         "title_server": "GSSP but it's been processed by a robot"
       }
     },
