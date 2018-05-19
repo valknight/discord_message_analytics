@@ -459,15 +459,15 @@ No subcommand selected - please enter a subcommand for your blocklist.
         if word is None:
             return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=['discord']['delete_timeout'])
         msg = await ctx.send(strings['blocklist']['status']['adding'])
-        id = ctx.message.author.id
+
         #check if the word is already on the list. throw error if it is
         if word != blockL:
             # if its not then add it
             blockL.append(word)
             # update DB with new list
             new_json = json.dumps(blockL)
-            set = "UPDATE blocklists SET blocklist = %s WHERE user_id = %s"
-            cursor.execute(set, (new_json, ctx.author.id, ))
+            update_blocklist = "UPDATE blocklists SET blocklist = %s WHERE user_id = %s"
+            cursor.execute(update_blocklist, (new_json, ctx.author.id, ))
         else:
             await ctx.send(strings['blocklist']['status']['exist'])
     
@@ -475,12 +475,13 @@ No subcommand selected - please enter a subcommand for your blocklist.
         if word is None:
             return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=['discord']['delete_timeout'])
         msg = await ctx.send(strings['blocklist']['status']['removing'])
-        id = ctx.message.author.id
+
         #try and remove it from list (use a try statement, catching ValueError)
         try:
             blockL.remove(word)
         except ValueError:
             return await ctx.send(strings['blocklist']['status']['not_exist'], delete_after=['discord']['delete_timeout'])
+            
         # update DB with new list
         new_json = json.dumps(blockL)
         set = "UPDATE blocklists SET blocklist = %s WHERE user_id = %s"
