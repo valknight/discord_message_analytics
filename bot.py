@@ -9,6 +9,8 @@ import time
 import sys
 import concurrent
 
+__version__ = "0.1.1"
+
 config_f = open("config.json")
 config = json.load(config_f)
 
@@ -40,6 +42,13 @@ You also have the legal right to request your data is deleted at any point, whic
 
 Your data may also be stored on data centres around the world, due to our usage of Google Team Drive to share files. All exports of the data will also be deleted by all moderators, including exports stored on data centres used for backups as discussed.```
 """
+
+if config['version']!=__version__:
+    if config['version_check']:
+        print(strings['config_invalid'].format(__version__, str(config['version'])))
+        sys.exit(1)
+    else:
+        print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
 
 
 @client.event
@@ -375,6 +384,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         messages, channels = get_messages(username)
 
         text = []
+
         text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
 
         text1 = ""
@@ -388,11 +398,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         except KeyError:
             return ctx.send('Not enough data yet, sorry!')
 
-        await output.edit(content=output.content + strings['emojis']['success'])
-
         attempt = 0
-        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
-
         while(True):
             attempt += 1
             if attempt >= 10:
@@ -403,7 +409,12 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
             if message_formatted != "None":
                 break
         
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
+        save_markov(text_model, ctx.author.id)
+        
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         await output.delete()
+        
         em = await markov_embed(str(ctx.author), message_formatted)
         output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
@@ -492,7 +503,7 @@ async def build_data_profile(name, member, guild):
             cnx.commit()
 
 
-async def delete_option(bot, ctx, message, delete_emoji, timeout=60):
+async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord']['delete_timeout']):
     """Utility function that allows for you to add a delete option to the end of a command.
     This makes it easier for users to control the output of commands, esp handy for random output ones."""
     await message.add_reaction(delete_emoji)
