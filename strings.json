@@ -33,7 +33,9 @@
         "removing": "Removing word. Please wait.",
         "exist": "Word is already on blacklist.",
         "not_exist": "Word is not on blacklist",
-        "complete": "Request complete."
+        "complete": "Request complete.",
+        "list": "Blacklist Contains the following words:",
+        "empty": "Blacklist is empty."
       }
     },
     "process_check" : {

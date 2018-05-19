@@ -430,9 +430,6 @@ No subcommand selected - please enter a subcommand for your blacklist.
 		id = ctx.message.author.id
 		# fetch the current blacklist
 		blackL = get_blacklist(id)
-		exists = True
-		if blackL == []:
-			exists = False
 		#check if the word is already on the list. throw error if it is
 		if word != blackL:
 			# if its not then add it
@@ -448,17 +445,34 @@ No subcommand selected - please enter a subcommand for your blacklist.
         if word is none:
             return await ctx.send(strings['blacklist']['status']['no_word'])
         msg = await ctx.send(strings['blacklist']['status']['removing'])
-        # TODO: Insert logic here
+        id = ctx.message.author.id
 		# fetch the current blacklist
-		# split the words if there are more than one(or maybe only allow one at a time)
-		# for each word
-			#try and remove it from list (use a try statement, catching ValueError)
+		blackL = get_blacklist(id)
+		#try and remove it from list (use a try statement, catching ValueError)
+		try:
+			blackL.remove(word)
+		except ValueError:
+			return await ctx.send(strings['blacklist']['status']['not_exist'])
 		# update DB with new list
+		new_json = json.dumps(blackL)
+		set = "UPDATE blacklists SET blacklist = %s WHERE user_id = %s"
+		cursor.execute(set, (new_json, user_id, ))
+		await ctx.send(strings['blacklist']['status']['complete'])
     elif command == "get":
+		user = ctx.message.author
 		# fetch the current blacklist
+		blackL = get_blacklist(user.id)
 		# make it nice to look at
+		if blackL == []:
+			msg = strings['blacklist']['status']['empty']
+		else:
+			msg = strings['blacklist']['status']['list']
+			for item in blackL:
+				part = ' ' + item + ','#done so that the merge with the long string is only done once per word
+				msg += part
+			msg = msg[:-1]#trim off the trailing ,
 		# send a private message with the nice to look at blacklist
-        await ctx.send("#TODO")
+        await ctx.send(user,msg)
     else:
         return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
