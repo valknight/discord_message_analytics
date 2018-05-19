@@ -1,5 +1,6 @@
 import datetime
 import discord
+from discord.ext import commands
 import json
 import markovify
 import math
@@ -8,28 +9,12 @@ import re
 import time
 import sys
 import concurrent
+from config import config, strings
 
-__version__ = "0.1.1"
-
-config_f = open("config.json")
-config = json.load(config_f)
-
-strings_f = open("strings.json")
-strings = json.load(strings_f)[config['language']]
-
-from discord.ext import commands
+client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor()
-
-token = config['discord']['token']
-client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
-
-disabled_groups = config['discord']['disabled_groups']
-
-add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
-add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
 opt_in_message = """
 We want to protect your information, and therefore you need to read the following in detail. We keep it brief as a lot of this is important for you to know incase you change your mind in the future.
@@ -43,12 +28,6 @@ You also have the legal right to request your data is deleted at any point, whic
 Your data may also be stored on data centres around the world, due to our usage of Google Team Drive to share files. All exports of the data will also be deleted by all moderators, including exports stored on data centres used for backups as discussed.```
 """
 
-if config['version']!=__version__:
-    if config['version_check']:
-        print(strings['config_invalid'].format(__version__, str(config['version'])))
-        sys.exit(1)
-    else:
-        print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
 
 
 @client.event
@@ -148,13 +127,13 @@ async def experiments(ctx):
 
         cursor.execute(opt_in_user, (author.id, ))
         create_table = """
-CREATE TABLE `%s` (
-  `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `channel_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `time` timestamp NULL DEFAULT NULL,
-  `contents` longtext COLLATE utf8mb4_unicode_ci,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        CREATE TABLE `%s` (
+            `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `channel_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+            `time` timestamp NULL DEFAULT NULL,
+            `contents` longtext COLLATE utf8mb4_unicode_ci,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
 
         try:
@@ -524,4 +503,21 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
 
 
 if __name__=="__main__":
+    token = config['discord']['token']
+    __version__ = "0.1.1"
+    
+
+    disabled_groups = config['discord']['disabled_groups']
+
+    add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
+
+    add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
+
+    if config['version']!=__version__:
+        if config['version_check']:
+            print(strings['config_invalid'].format(__version__, str(config['version'])))
+            sys.exit(1)
+        else:
+            print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
+
     client.run(token)
