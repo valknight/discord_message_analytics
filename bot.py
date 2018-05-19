@@ -418,7 +418,12 @@ async def get_blacklist(user_id):
     get = "SELECT blacklist FROM blacklists WHERE user_id = %s"
     cursor.execute(get, (user_id, ))
     resultset = cursor.fetchall()
-    return resultset[0]
+    if len(resultset) == 0:
+        #add a blank blacklist
+        set = "INSET INTO blacklists (user_id, blacklist) VALUES (%s, '[]')"
+        cursor.execute(set, (user_id, ))
+        return []
+    return json.loads(resultset[0])
 
 
 @client.command()
@@ -444,15 +449,52 @@ No subcommand selected - please enter a subcommand for your blacklist.
         if word is None:
             return await ctx.send(strings['blacklist']['status']['no_word'])
         msg = await ctx.send(strings['blacklist']['status']['adding'])
-        # TODO :Insert logic here
+        id = ctx.message.author.id
+        # fetch the current blacklist
+        blackL = get_blacklist(id)
+        #check if the word is already on the list. throw error if it is
+        if word != blackL:
+            # if its not then add it
+            blackL.append(word)
+            # update DB with new list
+            new_json = json.dumps(blackL)
+            set = "UPDATE blacklists SET blacklist = %s WHERE user_id = %s"
+            cursor.execute(set, (new_json, user_id, ))
+            await ctx.send(strings['blacklist']['status']['complete'])
+        else:
+            await ctx.send(strings['blacklist']['status']['exist'])
     elif command == "remove":
         if word is none:
             return await ctx.send(strings['blacklist']['status']['no_word'])
         msg = await ctx.send(strings['blacklist']['status']['removing'])
-        # TODO: Insert logic here
-
+        id = ctx.message.author.id
+        # fetch the current blacklist
+        blackL = get_blacklist(id)
+        #try and remove it from list (use a try statement, catching ValueError)
+        try:
+            blackL.remove(word)
+        except ValueError:
+            return await ctx.send(strings['blacklist']['status']['not_exist'])
+        # update DB with new list
+        new_json = json.dumps(blackL)
+        set = "UPDATE blacklists SET blacklist = %s WHERE user_id = %s"
+        cursor.execute(set, (new_json, user_id, ))
+        await ctx.send(strings['blacklist']['status']['complete'])
     elif command == "get":
-        await ctx.send("#TODO")
+        user = ctx.message.author
+        # fetch the current blacklist
+        blackL = get_blacklist(user.id)
+        # make it nice to look at
+        if blackL == []:
+            msg = strings['blacklist']['status']['empty']
+        else:
+            msg = strings['blacklist']['status']['list']
+            for item in blackL:
+                part = ' ' + item + ','#done so that the merge with the long string is only done once per word
+                msg += part
+            msg = msg[:-1]#trim off the trailing ,
+        # send a private message with the nice to look at blacklist
+        await ctx.send(user,msg)
     else:
         return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blacklist.
