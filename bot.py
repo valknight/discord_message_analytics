@@ -425,7 +425,7 @@ async def get_blocklist(user_id):
     get = "SELECT blocklist FROM blocklists WHERE user_id = %s"
     cursor.execute(get, (user_id, ))
     resultset = cursor.fetchall()
-    if len(resultset) == 0:
+    if not resultset:
         #add a blank blocklist
         create_user = "INSERT INTO blocklists (user_id, blocklist) VALUES (%s, '[]')"
         cursor.execute(create_user, (user_id, ))
