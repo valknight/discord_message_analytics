@@ -1,7 +1,7 @@
 {
   "english": {
-    "config_invalid" : "Version set to {}, but config is made for {}\nPlease check the new example config, and check you aren't missing any new values.",
-    "config_invalid_ignored" : "Version set to {}, but config is made for {}\nWe're ignoring it, as you have this set in your config, but please for the love of god don't do this",
+    "config_invalid" : "Version set to {}, but config is made for {}\nRerun config.py, then check the new example config, and ensure you aren't missing any new values.",
+    "config_invalid_ignored" : "Version set to {}, but config is made for {}\nWe're ignoring it, as you have this set in your config, but please for the love of god don't do this. You *will* run into issues if you leave this on forever.",
     "delete_message_title": "{} deleted message",
     "delete_message_desc": "User deleted this message.",
     "emojis": {
@@ -29,7 +29,7 @@
         "title_server": "GSSP but it's been processed by a robot"
       }
     },
-    "blacklist": {
+    "blocklist": {
       "status": {
         "no_word": "Please specify a word.",
         "adding": "Adding word. Please wait.",

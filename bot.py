@@ -14,7 +14,7 @@ from config import config, strings
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.1.1"
+__version__ = "0.2"
 
 if config['version']!=__version__:
     if config['version_check']:
@@ -205,24 +205,30 @@ def opted_in(user=None, user_id=None):
     return results[0][1]
 
 
-def get_messages(table_name):
+async def get_messages(user_id):
     """
-    table_name : Username of user you want to get messages for
+    user_id : ID of user you want to get messages for
 
     Returns:
 
     messages: list of all messages from a user
     channels: list of all channels relevant to messages, in same order
     """
+    username = opted_in(user_id=user_id)
     get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC"
-    cursor.execute(get_messages, (table_name, ))
+    cursor.execute(get_messages, (username, ))
     results = cursor.fetchall()
     messages = []
     channels = []
-
+    blocklist = await get_blocklist(user_id)
     for result in results:
-        messages.append(result[0])
-        channels.append(result[1])
+        valid = True
+        for word in result[0].split(" "):
+            if word in blocklist:
+                valid = False
+        if valid:
+            messages.append(result[0])
+            channels.append(result[1])
 
     return messages, channels
 
@@ -282,6 +288,7 @@ async def build_messages(ctx, nsfw, messages, channels, selected_channel=None):
         text = list of text that already exists. If not set, we just create one
     """
     text = []
+
     for counter, m in enumerate(messages):
 
         if channel_allowed(channels[counter], ctx.message.channel, nsfw):
@@ -326,9 +333,8 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         print(selected_channel)
         for server in client.guilds:
             for member in server.members:
-                username = opted_in(user_id=member.id)
                 if username is not False:
-                    messages, channels = get_messages(username)
+                    messages, channels = await get_messages(member.id)
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
                     for m in text_temp:
                         text.append(m)
@@ -375,7 +381,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         username = opted_in(user_id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-        messages, channels = get_messages(username)
+        messages, channels = await get_messages(ctx.author.id)
 
         text = []
 
@@ -414,97 +420,95 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
     return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
-async def get_blacklist(user_id):
-    get = "SELECT blacklist FROM blacklists WHERE user_id = %s"
+async def get_blocklist(user_id):
+    user_id = str(user_id)
+    get = "SELECT blocklist FROM blocklists WHERE user_id = %s"
     cursor.execute(get, (user_id, ))
     resultset = cursor.fetchall()
     if len(resultset) == 0:
-        #add a blank blacklist
-        set = "INSET INTO blacklists (user_id, blacklist) VALUES (%s, '[]')"
-        cursor.execute(set, (user_id, ))
+        #add a blank blocklist
+        create_user = "INSERT INTO blocklists (user_id, blocklist) VALUES (%s, '[]')"
+        cursor.execute(create_user, (user_id, ))
         return []
-    return json.loads(resultset[0])
+    print(resultset)
+    return json.loads(resultset[0][0])
 
 
 @client.command()
-async def blacklist(ctx, command=None, word=None):
+async def blocklist(ctx, command=None, word=None):
     """
     Prevents words from being shown publicly through methods such as markov and markov_server.
     Note: they will still be logged, and this just prevents them being shown in chat.
 
     Command: option to use
-    Word: Word to add or remove from blacklist
+    Word: Word to add or remove from blocklist
     """
     await ctx.message.delete()
     if command is None:
         return await ctx.send("""
-No subcommand selected - please enter a subcommand for your blacklist.
+No subcommand selected - please enter a subcommand for your blocklist.
 
-?blacklist add [word] : Add word to blacklist
-?blacklist remove [word] : Remove word from blacklist
-?blacklist get : Get PM of current blacklist
+?blocklist add [word] : Add word to blocklist
+?blocklist remove [word] : Remove word from blocklist
+?blocklist get : Get PM of current blocklist
             """)
-
+    #fetch current blocklist
+    blockL = await get_blocklist(ctx.author.id)
+    
     if command == "add":
         if word is None:
-            return await ctx.send(strings['blacklist']['status']['no_word'])
-        msg = await ctx.send(strings['blacklist']['status']['adding'])
+            return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=['discord']['delete_timeout'])
+        msg = await ctx.send(strings['blocklist']['status']['adding'])
         id = ctx.message.author.id
-        # fetch the current blacklist
-        blackL = get_blacklist(id)
         #check if the word is already on the list. throw error if it is
-        if word != blackL:
+        if word != blockL:
             # if its not then add it
-            blackL.append(word)
+            blockL.append(word)
             # update DB with new list
-            new_json = json.dumps(blackL)
-            set = "UPDATE blacklists SET blacklist = %s WHERE user_id = %s"
-            cursor.execute(set, (new_json, user_id, ))
-            await ctx.send(strings['blacklist']['status']['complete'])
+            new_json = json.dumps(blockL)
+            set = "UPDATE blocklists SET blocklist = %s WHERE user_id = %s"
+            cursor.execute(set, (new_json, ctx.author.id, ))
         else:
-            await ctx.send(strings['blacklist']['status']['exist'])
+            await ctx.send(strings['blocklist']['status']['exist'])
+    
     elif command == "remove":
-        if word is none:
-            return await ctx.send(strings['blacklist']['status']['no_word'])
-        msg = await ctx.send(strings['blacklist']['status']['removing'])
+        if word is None:
+            return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=['discord']['delete_timeout'])
+        msg = await ctx.send(strings['blocklist']['status']['removing'])
         id = ctx.message.author.id
-        # fetch the current blacklist
-        blackL = get_blacklist(id)
         #try and remove it from list (use a try statement, catching ValueError)
         try:
-            blackL.remove(word)
+            blockL.remove(word)
         except ValueError:
-            return await ctx.send(strings['blacklist']['status']['not_exist'])
+            return await ctx.send(strings['blocklist']['status']['not_exist'], delete_after=['discord']['delete_timeout'])
         # update DB with new list
-        new_json = json.dumps(blackL)
-        set = "UPDATE blacklists SET blacklist = %s WHERE user_id = %s"
-        cursor.execute(set, (new_json, user_id, ))
-        await ctx.send(strings['blacklist']['status']['complete'])
+        new_json = json.dumps(blockL)
+        set = "UPDATE blocklists SET blocklist = %s WHERE user_id = %s"
+        cursor.execute(set, (new_json, ctx.author.id, ))
+
     elif command == "get":
-        user = ctx.message.author
-        # fetch the current blacklist
-        blackL = get_blacklist(user.id)
         # make it nice to look at
-        if blackL == []:
-            msg = strings['blacklist']['status']['empty']
+        if blockL == []:
+            msg = strings['blocklist']['status']['empty']
         else:
-            msg = strings['blacklist']['status']['list']
-            for item in blackL:
+            msg = strings['blocklist']['status']['list']
+            for item in blockL:
                 part = ' ' + item + ','#done so that the merge with the long string is only done once per word
                 msg += part
             msg = msg[:-1]#trim off the trailing ,
-        # send a private message with the nice to look at blacklist
-        await ctx.send(user,msg)
+        # send a private message with the nice to look at blocklist
+        await ctx.author.send(msg)
+        msg = await ctx.send(strings['blocklist']['status']['complete'], delete_after=['discord']['delete_timeout'])
     else:
         return await ctx.send("""
-No subcommand selected - please enter a subcommand for your blacklist.
+No subcommand selected - please enter a subcommand for your blocklist.
 
-?blacklist add [word] : Add word to blacklist
-?blacklist remove [word] : Remove word from blacklist
-?blacklist get : Get PM of current blacklist
+?blocklist add [word] : Add word to blocklist
+?blocklist remove [word] : Remove word from blocklist
+?blocklist get : Get PM of current blocklist
             """)
 
-    await msg.edit(content=strings['blacklist']['status']['complete'])
+    await msg.edit(content=strings['blocklist']['status']['complete'])
 
 
 async def build_data_profile(name, member, guild):
