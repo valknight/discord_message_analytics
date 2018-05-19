@@ -13,6 +13,18 @@ from config import config, strings
 
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
+token = config['discord']['token']
+__version__ = "0.1.1"
+
+if config['version']!=__version__:
+    if config['version_check']:
+        print(strings['config_invalid'].format(__version__, str(config['version'])))
+        sys.exit(1)
+    else:
+        print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
+    
+disabled_groups = config['discord']['disabled_groups']
+    
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
 add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
@@ -297,7 +309,7 @@ async def markov_embed(title, message):
     return em
 
 
-@client.command()
+@client.command(aliases=["m_s"])
 async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output based on entire server's messages.
@@ -348,7 +360,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
     return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
-@client.command()
+@client.command(aliases=["m"])
 async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output for user who ran this command
@@ -506,16 +518,4 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
 
 
 if __name__=="__main__":
-    token = config['discord']['token']
-    __version__ = "0.1.1"
-
-    if config['version']!=__version__:
-        if config['version_check']:
-            print(strings['config_invalid'].format(__version__, str(config['version'])))
-            sys.exit(1)
-        else:
-            print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
-    
-    disabled_groups = config['discord']['disabled_groups']
-    
     client.run(token)
