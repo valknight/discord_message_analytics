@@ -51,7 +51,7 @@
     "nyoom_calc" : {
         "status" : {
             "calculating" : "Calculating Nyoom metric",
-            "not_opted_in" : "User has not opted into processing. Sorry!"
+            "not_opted_in" : "User has not opted into processing. Sorry!",
             "finished" : "{} has posted {} massages, over {} minutes of activity, giving a Nyoom metric of {}"
         }
     },
