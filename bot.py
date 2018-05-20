@@ -578,6 +578,12 @@ async def get_times(username):
 	
 @client.command()
 async def nyoom(ctx, user=None):
+    """
+	Calculated the specified users nyoom metric.
+	e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
+	
+    user : user to get nyoom metric for, if not author
+    """
 	if user is None:
         user = ctx.author.name
 	output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
