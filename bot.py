@@ -562,6 +562,24 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
     except concurrent.futures._base.TimeoutError:
         await message.remove_reaction(delete_emoji, bot.user)
 
+@client.command()
+async def nyoom(ctx, user=None):
+	if user is None:
+        user = ctx.author.id
+	else:
+		if not ctx.mentions:#surely there's a better way of doing this
+			user = ctx.mentions[0].id
+		else:
+			user = ctx.author.id
+	output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
+    if not opted_in(user=user):
+        return await output.edit(content=output.content + strings['nyoom_calc']['status']['not_opted_in'])
+	#grab a list of times that user has posted
+	#group them into periods of activity
+	#sum the total length of activity periods and divide by total number of messages
+	#print the nyoom metric
+    return
+	
 
 if __name__=="__main__":
     client.run(token)
