@@ -48,6 +48,12 @@
             "opted_in" : "User has opted in!"
         }
     },
+    "nyoom_calc" : {
+        "status" : {
+            "calculating" : "Calculating Nyoom metric",
+            "not_opted_in" : "User has not opted into processing. Sorry!"
+        }
+    },
     "data_collection": {
       "opt_in_title": "Welcome to GSSP experiments! :atom:",
       "opt_in_footer": "To proceed, please run this command again.",
