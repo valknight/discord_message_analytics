@@ -611,6 +611,7 @@ async def nyoom(ctx, user=None):
 	for period in periods:
 		totalM += period[2] #sum all the number of messages [can probs be done with len(times)]
 		totalT += ((period[1]-period[0]).total_seconds()/60) +1#total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
+	totalT /= 60#makes the total active time and nyoom_metric count hours of activity rather than minutes
 	nyoom_metric = totalM / totalT#number of message per minute during periods of activity
 	#print the nyoom metric
     return await output.edit(content=output.content + strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
