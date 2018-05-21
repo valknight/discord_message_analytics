@@ -88,6 +88,51 @@ async def on_message(message):
 
     return await client.process_commands(message)
 
+@client.event
+async def on_command_error(ctx, error):
+        if isinstance(error, commands.CommandInvokeError):
+            embed = discord.Embed(title='Command Error')
+            embed.description = str(error)
+            embed.add_field(name='Server', value=ctx.guild)
+            embed.add_field(name='Channel', value=ctx.channel.mention)
+            embed.add_field(name='User', value=ctx.author)
+            embed.add_field(name='Message', value=ctx.message.content)
+            embed.timestamp = datetime.datetime.utcnow()
+            await ctx.send(embed=embed)
+        else:
+            if isinstance(error, commands.NoPrivateMessage):
+                embed = discord.Embed(description="")
+            elif isinstance(error, commands.DisabledCommand):
+                embed = discord.Embed(description=strings['errors']['disabled'])
+            elif isinstance(error, commands.MissingRequiredArgument):
+                embed = discord.Embed(description=strings['errors']['argument_missing'].format(error.args[0]))
+            elif isinstance(error, commands.BadArgument):
+                embed = discord.Embed(description=strings['errors']['bad_argument'].format(error.args[0]))
+            elif isinstance(error, commands.TooManyArguments):
+                embed = discord.Embed(description=strings['errors']['too_many_arguments'])
+            elif isinstance(error, commands.CommandNotFound):
+                embed = discord.Embed(description=strings['errors']['command_not_found'])
+            elif isinstance(error, commands.BotMissingPermissions):
+                embed = discord.Embed(description="{}".format(error.args[0].replace("Bot", strings['bot_name'])))
+            elif isinstance(error, commands.MissingPermissions):
+                embed = discord.Embed(description="{}".format(error.args[0]))
+            elif isinstance(error, commands.NotOwner):
+                embed = discord.Embed(description=strings['errors']['not_owner'].format(strings['owner_firstname']))
+            elif isinstance(error, commands.CheckFailure):
+                embed = discord.Embed(description=strings['errors']['no_permission'])
+            elif isinstance(error, commands.CommandError):
+                embed = discord.Embed(description=strings['errors']['command_error'].format(error.args[0]))
+            else:
+                embed = discord.Embed(
+                    description=strings['errors']['placeholder'].format(strings['bot_name']))
+            if embed:
+                embed.colour = 0x4c0000
+                await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+@commands.is_owner()
+@client.command()
+async def thonkang(cnx):
+    await cnx.message.delete()
+    await   cnx.send(strings['emojis']['loading'])
 
 @commands.is_owner()
 @client.command()
@@ -333,7 +378,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         print(selected_channel)
         for server in client.guilds:
             for member in server.members:
-                if username is not False:
+                if opted_in(user_id=member.id) is not False:
                     messages, channels = await get_messages(member.id)
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
                     for m in text_temp:
