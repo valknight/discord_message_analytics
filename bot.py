@@ -572,8 +572,10 @@ async def get_times(username):
     """
 	get_times = "SELECT `time` FROM `%s` ORDER BY TIME ASC"
     cursor.execute(get_times, (username, ))
-    times = cursor.fetchall()
-	#TODO:I'm assuming these are all datetimes. if they are not here is where to convert them so they are
+    timesA = cursor.fetchall()
+	times = []
+	for time in timesA:
+		times.append(time[0])
 	return times
 	
 @client.command()
