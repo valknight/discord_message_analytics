@@ -85,9 +85,8 @@ async def on_message(message):
         cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
-	
-	if ctx.message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
-		return
+    if ctx.message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+        return
     return await client.process_commands(message)
 
 
