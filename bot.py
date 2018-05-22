@@ -381,7 +381,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         print(selected_channel)
         for server in client.guilds:
             for member in server.members:
-                if username is not False:
+                if opted_in(user_id=member.id) is not False:
                     messages, channels = await get_messages(member.id)
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
                     for m in text_temp:
