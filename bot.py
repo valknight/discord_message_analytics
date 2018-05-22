@@ -643,6 +643,8 @@ async def nyoom(ctx, user: discord.Member=None):
 
     output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
     username = opted_in(user_id=user.id)
+    # load interval between messages we're using from the configs
+    interval = config['discord']['nyoom_interval']
     if not username:
         return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
     #grab a list of times that user has posted
