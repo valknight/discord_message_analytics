@@ -609,6 +609,59 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
     except concurrent.futures._base.TimeoutError:
         await message.remove_reaction(delete_emoji, bot.user)
 
+async def get_times(username):
+    """
+    username : user you want to get messages for
+
+    Returns:
+
+    times: list of all timestamps of users messages
+    """
+	get_times = "SELECT `time` FROM `%s` ORDER BY TIME ASC"
+    cursor.execute(get_times, (username, ))
+    timesA = cursor.fetchall()
+	times = []
+	for time in timesA:
+		times.append(time[0])
+	return times
+	
+@client.command()
+async def nyoom(ctx, user=None):
+    """
+	Calculated the specified users nyoom metric.
+	e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
+	
+    user : user to get nyoom metric for, if not author
+    """
+	if user is None:
+        user = ctx.author.name
+	output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
+	username = opted_in(user=user)
+    if not username:
+        return await output.edit(content=output.content + strings['nyoom_calc']['status']['not_opted_in'])
+	#grab a list of times that user has posted
+	times = get_times(username)
+	#group them into periods of activity
+	periods = []
+	curPeriod = [times[0],times[0],0]#begining of period, end of period, number of messages in period
+	for time in times:
+		if time > curPeriod[1] + datetime.timedelta(0,600):#if theres more than a 10min dif between this time and last time
+			#make a new period
+			periods.append(curPeriod)
+			curPeriod = [time,time,1]
+		else:
+			curPeriod[1] = time#the period now ends with the most recent timestamp
+			curPeriod[2] += 1#add the message to the period
+	#sum the total length of activity periods and divide by total number of messages
+	totalT = 0
+	totalM = 0
+	for period in periods:
+		totalM += period[2] #sum all the number of messages [can probs be done with len(times)]
+		totalT += ((period[1]-period[0]).total_seconds()/60) +1#total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
+	totalT /= 60#makes the total active time and nyoom_metric count hours of activity rather than minutes
+	nyoom_metric = totalM / totalT#number of message per minute during periods of activity
+	#print the nyoom metric
+    return await output.edit(content=output.content + strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
 
 if __name__=="__main__":
     client.run(token)
