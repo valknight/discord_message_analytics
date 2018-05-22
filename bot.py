@@ -85,7 +85,8 @@ async def on_message(message):
         cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
-
+    if ctx.message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+        return
     return await client.process_commands(message)
 
 
@@ -131,6 +132,7 @@ async def on_command_error(ctx, error):
             if embed:
                 embed.colour = 0x4c0000
                 await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+
 @commands.is_owner()
 @client.command()
 async def thonkang(cnx):
@@ -632,7 +634,7 @@ async def get_times(username):
 async def nyoom(ctx, user: discord.Member=None):
     """
     Calculated the specified users nyoom metric.
-    e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
+    e.g. The number of messages per hour they post while active (posts within 10mins of each other count as active)
 
     user : user to get nyoom metric for, if not author
     """
@@ -642,7 +644,7 @@ async def nyoom(ctx, user: discord.Member=None):
     output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
     username = opted_in(user_id=user.id)
     if not username:
-        return await output.edit(content=output.content + strings['nyoom_calc']['status']['not_opted_in'])
+        return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
     #grab a list of times that user has posted
     times = await get_times(username)
     #group them into periods of activity
