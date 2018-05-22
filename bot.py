@@ -85,7 +85,9 @@ async def on_message(message):
         cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
-
+	
+	if ctx.message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+		return
     return await client.process_commands(message)
 
 
@@ -131,6 +133,7 @@ async def on_command_error(ctx, error):
             if embed:
                 embed.colour = 0x4c0000
                 await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+
 @commands.is_owner()
 @client.command()
 async def thonkang(cnx):
