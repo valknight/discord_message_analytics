@@ -637,9 +637,9 @@ async def nyoom(ctx, user=None):
     user : user to get nyoom metric for, if not author
     """
     if user is None:
-        user = ctx.author.name
+        user = ctx.author
     output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
-    username = opted_in(user=user)
+    username = opted_in(user_id=user.id)
     if not username:
         return await output.edit(content=output.content + strings['nyoom_calc']['status']['not_opted_in'])
     #grab a list of times that user has posted
