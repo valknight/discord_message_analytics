@@ -629,7 +629,7 @@ async def get_times(username):
     return times
 
 @client.command()
-async def nyoom(ctx, user=None):
+async def nyoom(ctx, user: discord.Member=None):
     """
     Calculated the specified users nyoom metric.
     e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
@@ -637,7 +637,8 @@ async def nyoom(ctx, user=None):
     user : user to get nyoom metric for, if not author
     """
     if user is None:
-        user = ctx.author
+        user = ctx.message.author
+
     output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
     username = opted_in(user_id=user.id)
     if not username:
@@ -664,7 +665,7 @@ async def nyoom(ctx, user=None):
     totalT /= 60 # makes the total active time and nyoom_metric count hours of activity rather than minutes
     nyoom_metric = totalM / totalT#number of message per minute during periods of activity
     #print the nyoom metric
-    return await output.edit(content=output.content + strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
+    return await output.edit(content=strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
 
 if __name__=="__main__":
     client.run(token)
