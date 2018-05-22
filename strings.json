@@ -66,8 +66,8 @@
     "nyoom_calc" : {
         "status" : {
             "calculating" : "Calculating Nyoom metric",
-            "not_opted_in" : "User has not opted into processing. Sorry!",
-            "finished" : "{} has posted {} massages, over {:.2f} Hours of activity, giving a Nyoom metric of {:.2f}"
+            "not_opted_in" : "We cannot calculate your nyoom without you opting in. Run ?experiments to get started!",
+            "finished" : "{} has posted {} messages, over {:.2f} hours of activity - giving a nyoom metric of {:.2f}"
         }
     },
     "data_collection": {
