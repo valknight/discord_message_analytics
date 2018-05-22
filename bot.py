@@ -85,7 +85,7 @@ async def on_message(message):
         cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
-    if ctx.message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+    if message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
         return
     return await client.process_commands(message)
 
@@ -647,13 +647,13 @@ async def nyoom(ctx, user: discord.Member=None):
     interval = config['discord']['nyoom_interval']
     if not username:
         return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
-    #grab a list of times that user has posted
+    # grab a list of times that user has posted
     times = await get_times(username)
-    #group them into periods of activity
+    # group them into periods of activity
     periods = []
-    curPeriod = [times[0],times[0],0]#begining of period, end of period, number of messages in period
+    curPeriod = [times[0],times[0],0] # begining of period, end of period, number of messages in period
     for time in times:
-        if time > curPeriod[1] + datetime.timedelta(0,600):#if theres more than a 10min dif between this time and last time
+        if time > curPeriod[1] + datetime.timedelta(0,interval): # if theres more than a 10min dif between this time and last time
             #make a new period
             periods.append(curPeriod)
             curPeriod = [time,time,1]
