@@ -111,6 +111,8 @@ async def on_command_error(ctx, error):
             elif isinstance(error, commands.TooManyArguments):
                 embed = discord.Embed(description=strings['errors']['too_many_arguments'])
             elif isinstance(error, commands.CommandNotFound):
+                if not config['discord']['prompt_command_exist']:
+                    return
                 embed = discord.Embed(description=strings['errors']['command_not_found'])
             elif isinstance(error, commands.BotMissingPermissions):
                 embed = discord.Embed(description="{}".format(error.args[0].replace("Bot", strings['bot_name'])))
