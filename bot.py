@@ -635,7 +635,7 @@ async def get_times(username):
 async def nyoom(ctx, user: discord.Member=None):
     """
     Calculated the specified users nyoom metric.
-    e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
+    e.g. The number of messages per hour they post while active (posts within 10mins of each other count as active)
 
     user : user to get nyoom metric for, if not author
     """
