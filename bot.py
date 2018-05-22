@@ -22,9 +22,9 @@ if config['version']!=__version__:
         sys.exit(1)
     else:
         print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
-    
+
 disabled_groups = config['discord']['disabled_groups']
-    
+
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
 add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
 
@@ -87,6 +87,7 @@ async def on_message(message):
         pass
 
     return await client.process_commands(message)
+
 
 @client.event
 async def on_command_error(ctx, error):
@@ -380,7 +381,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         print(selected_channel)
         for server in client.guilds:
             for member in server.members:
-                if opted_in(user_id=member.id) is not False:
+                if username is not False:
                     messages, channels = await get_messages(member.id)
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
                     for m in text_temp:
@@ -455,13 +456,13 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
             message_formatted = str(new_sentance)
             if message_formatted != "None":
                 break
-        
+
         await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
         await save_markov(text_model, ctx.author.id)
-        
+
         await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         await output.delete()
-        
+
         em = await markov_embed(str(ctx.author), message_formatted)
         output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
@@ -517,7 +518,7 @@ No subcommand selected - please enter a subcommand for your blocklist.
             cursor.execute(update_blocklist, (new_json, ctx.author.id, ))
         else:
             await ctx.send(strings['blocklist']['status']['exist'])
-    
+
     elif command == "remove":
         if word is None:
             return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=config['discord']['delete_timeout'])
@@ -617,50 +618,52 @@ async def get_times(username):
 
     times: list of all timestamps of users messages
     """
-	get_times = "SELECT `time` FROM `%s` ORDER BY TIME ASC"
+
+
+    get_times = "SELECT `time` FROM `%s` ORDER BY TIME ASC"
     cursor.execute(get_times, (username, ))
     timesA = cursor.fetchall()
-	times = []
-	for time in timesA:
-		times.append(time[0])
-	return times
-	
+    times = []
+    for time in timesA:
+        times.append(time[0])
+    return times
+
 @client.command()
 async def nyoom(ctx, user=None):
     """
-	Calculated the specified users nyoom metric.
-	e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
-	
+    Calculated the specified users nyoom metric.
+    e.g. The number of messages per minute they post while active (posts within 10mins of each other count as active)
+
     user : user to get nyoom metric for, if not author
     """
-	if user is None:
+    if user is None:
         user = ctx.author.name
-	output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
-	username = opted_in(user=user)
+    output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
+    username = opted_in(user=user)
     if not username:
         return await output.edit(content=output.content + strings['nyoom_calc']['status']['not_opted_in'])
-	#grab a list of times that user has posted
-	times = get_times(username)
-	#group them into periods of activity
-	periods = []
-	curPeriod = [times[0],times[0],0]#begining of period, end of period, number of messages in period
-	for time in times:
-		if time > curPeriod[1] + datetime.timedelta(0,600):#if theres more than a 10min dif between this time and last time
-			#make a new period
-			periods.append(curPeriod)
-			curPeriod = [time,time,1]
-		else:
-			curPeriod[1] = time#the period now ends with the most recent timestamp
-			curPeriod[2] += 1#add the message to the period
-	#sum the total length of activity periods and divide by total number of messages
-	totalT = 0
-	totalM = 0
-	for period in periods:
-		totalM += period[2] #sum all the number of messages [can probs be done with len(times)]
-		totalT += ((period[1]-period[0]).total_seconds()/60) +1#total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
-	totalT /= 60#makes the total active time and nyoom_metric count hours of activity rather than minutes
-	nyoom_metric = totalM / totalT#number of message per minute during periods of activity
-	#print the nyoom metric
+    #grab a list of times that user has posted
+    times = await get_times(username)
+    #group them into periods of activity
+    periods = []
+    curPeriod = [times[0],times[0],0]#begining of period, end of period, number of messages in period
+    for time in times:
+        if time > curPeriod[1] + datetime.timedelta(0,600):#if theres more than a 10min dif between this time and last time
+            #make a new period
+            periods.append(curPeriod)
+            curPeriod = [time,time,1]
+        else:
+            curPeriod[1] = time#the period now ends with the most recent timestamp
+            curPeriod[2] += 1#add the message to the period
+    #sum the total length of activity periods and divide by total number of messages
+    totalT = 0
+    totalM = 0
+    for period in periods:
+        totalM += period[2] #sum all the number of messages [can probs be done with len(times)]
+        totalT += ((period[1]-period[0]).total_seconds()/60) +1 # total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
+    totalT /= 60 # makes the total active time and nyoom_metric count hours of activity rather than minutes
+    nyoom_metric = totalM / totalT#number of message per minute during periods of activity
+    #print the nyoom metric
     return await output.edit(content=output.content + strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
 
 if __name__=="__main__":
