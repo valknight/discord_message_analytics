@@ -645,7 +645,7 @@ async def nyoom(ctx, user: discord.Member=None):
     output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
     username = opted_in(user_id=user.id)
     if not username:
-        return await output.edit(content=output.content + strings['nyoom_calc']['status']['not_opted_in'])
+        return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
     #grab a list of times that user has posted
     times = await get_times(username)
     #group them into periods of activity
