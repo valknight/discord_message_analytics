@@ -56,12 +56,13 @@ async def on_ready():
     print()
 
     print("Ensuring no data was lost during downtime. This may take a while if a lot of users are part of your experiments")
-
     for server in client.guilds:
+        members = []
         for member in server.members:
             name = opted_in(user_id=member.id)
             if name is not False:
-                await build_data_profile(name, member, server)
+                members.append(member)
+        await build_data_profile(members, server, None)
 
 
 @client.event
@@ -207,10 +208,9 @@ async def experiments(ctx):
         except mysql.connector.errors.ProgrammingError:
             await channel.send(strings['data_collection']['update_record'].format(username))
 
-    name = opted_in(user_id=message.author.id)
-
     await channel.send(strings['data_collection']['data_track_start'])
-    await build_data_profile(name, author, message.guild)
+
+    await build_data_profile([author], message.guild)
     await channel.send(strings['data_collection']['complete'].format(author.name))
 
 
@@ -561,7 +561,7 @@ No subcommand selected - please enter a subcommand for your blocklist.
     await msg.edit(content=strings['blocklist']['status']['complete'])
 
 
-async def build_data_profile(name, member, guild):
+async def build_data_profile(members, guild, limit=50000):
     """
     Used for building a data profile based on a user
 
@@ -569,7 +569,7 @@ async def build_data_profile(name, member, guild):
     Member: member object
     Guild: Guild object
     """
-    print("Initialising data tracking for " + name)
+
     for summer_channel in guild.text_channels:
         adding = True
         for group in disabled_groups:
@@ -578,11 +578,11 @@ async def build_data_profile(name, member, guild):
                 break
 
         if adding:
-            print(name + " > in > " + summer_channel.name)
-            messages_tocheck = await summer_channel.history(limit=50000).flatten()
-            print(name + " > processing > " + summer_channel.name)
+            print("{} scraping for {} users".format(summer_channel.name, len(members)))
+            messages_tocheck = await summer_channel.history(limit=limit).flatten()
             for message in messages_tocheck:
-                if message.author == member:
+                if message.author in members:
+                    name = opted_in(user_id=message.author.id)
                     try:
                         cursor.execute(add_message_custom, (name, int(message.id), str(
                             message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
@@ -590,6 +590,7 @@ async def build_data_profile(name, member, guild):
                         print("Couldn't insert, probs a time issue")
                     except mysql.connector.errors.IntegrityError:
                         pass
+            print("{} scraped for {} users".format(summer_channel.name, len(members)))
             cnx.commit()
 
 
