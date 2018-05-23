@@ -86,7 +86,10 @@ async def on_message(message):
         cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
-    if message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+    try:
+        if message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+            return
+    except IndexError:
         return
     return await client.process_commands(message)
 
@@ -565,9 +568,9 @@ async def build_data_profile(members, guild, limit=50000):
     """
     Used for building a data profile based on a user
 
-    Name: name of user
-    Member: member object
+    Members: list of members we want to import for
     Guild: Guild object
+    Limit: limit of messages to be imported
     """
 
     for summer_channel in guild.text_channels:
