@@ -56,13 +56,14 @@ async def on_ready():
     print()
 
     print("Ensuring no data was lost during downtime. This may take a while if a lot of users are part of your experiments")
+    members = []
     for server in client.guilds:
-        members = []
         for member in server.members:
             name = opted_in(user_id=member.id)
             if name is not False:
                 members.append(member)
-        await build_data_profile(members, server, None)
+    
+    await build_data_profile(members, limit=None)
 
 
 @client.event
@@ -213,7 +214,7 @@ async def experiments(ctx):
 
     await channel.send(strings['data_collection']['data_track_start'])
 
-    await build_data_profile([author], message.guild)
+    await build_data_profile([author])
     await channel.send(strings['data_collection']['complete'].format(author.name))
 
 
@@ -483,7 +484,6 @@ async def get_blocklist(user_id):
         create_user = "INSERT INTO blocklists (user_id, blocklist) VALUES (%s, '[]')"
         cursor.execute(create_user, (user_id, ))
         return []
-    print(resultset)
     return json.loads(resultset[0][0])
 
 
@@ -564,7 +564,7 @@ No subcommand selected - please enter a subcommand for your blocklist.
     await msg.edit(content=strings['blocklist']['status']['complete'])
 
 
-async def build_data_profile(members, guild, limit=50000):
+async def build_data_profile(members, limit=50000):
     """
     Used for building a data profile based on a user
 
@@ -572,31 +572,33 @@ async def build_data_profile(members, guild, limit=50000):
     Guild: Guild object
     Limit: limit of messages to be imported
     """
+    for guild in client.guilds:
+        print("Starting guild {}".format(guild.name))
+        for summer_channel in guild.text_channels:
+            adding = True
+            for group in disabled_groups:
+                if summer_channel.category.name.lower() == group.lower():
+                    adding = False
+                    break
 
-    for summer_channel in guild.text_channels:
-        adding = True
-        for group in disabled_groups:
-            if summer_channel.category.name.lower() == group.lower():
-                adding = False
-                break
-
-        if adding:
-            print("{} scraping for {} users".format(summer_channel.name, len(members)))
-            messages_tocheck = await summer_channel.history(limit=limit).flatten()
-            for message in messages_tocheck:
-                if message.author in members:
-                    name = opted_in(user_id=message.author.id)
-                    try:
-                        cursor.execute(add_message_custom, (name, int(message.id), str(
-                            message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
-                    except mysql.connector.errors.DataError:
-                        print("Couldn't insert, probs a time issue")
-                    except mysql.connector.errors.IntegrityError:
-                        pass
-            print("{} scraped for {} users".format(summer_channel.name, len(members)))
-            cnx.commit()
-
-
+            if adding:
+                counter = 0
+                already_added = 0
+                print("{} scraping for {} users".format(summer_channel.name, len(members)))
+                messages_tocheck = await summer_channel.history(limit=limit).flatten()
+                for message in messages_tocheck:
+                    if message.author in members:
+                        name = opted_in(user_id=message.author.id)
+                        try:
+                            cursor.execute(add_message_custom, (name, int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
+                            counter += 1
+                        except mysql.connector.errors.DataError:
+                            print("Couldn't insert, probs a time issue")
+                        except mysql.connector.errors.IntegrityError:
+                            already_added += 1
+                print("{} scraped for {} users - added {} messages, found {} already added".format(summer_channel.name, len(members), counter, already_added))
+                cnx.commit()
+        print("Completed guild {}".format(guild.name))
 async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord']['delete_timeout']):
     """Utility function that allows for you to add a delete option to the end of a command.
     This makes it easier for users to control the output of commands, esp handy for random output ones."""
