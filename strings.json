@@ -8,6 +8,7 @@
     "delete_message_title": "{} deleted message",
     "delete_message_desc": "User deleted this message.",
     "errors" : {
+      "disabled_high_load": "This command has been disabled due to high server load. Sorry!",
       "not_owner": "You are not the owner - try to steal {}'s identity, then go again",
       "no_pm" : "This command cannot be ran in private message",
       "disabled" : "This command is disabled",
@@ -22,6 +23,7 @@
     "emojis": {
       "delete": 434748743871365130,
       "loading": "<a:zmegathink:412052452582359041>",
+      "animated_emoji_template": "<a:{}:{}>",
       "success": ":white_check_mark:",
       "reasurrance": ":thumbsup:",
       "markov": ":robot:"

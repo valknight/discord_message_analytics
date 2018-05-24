@@ -371,10 +371,14 @@ async def markov_embed(title, message):
 
 
 @client.command(aliases=["m_s"])
-async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
+async def markov_server(ctx, run: bool=False, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output based on entire server's messages.
     """
+    if client.owner_id!=ctx.author.id:
+        return await ctx.send(strings['errors']['disabled_high_load'])
+    if run is not True:
+        return await ctx.send("Did not specify owner running, cancelled as high load command.")
     if (not ctx.message.channel.is_nsfw()) and nsfw:
         return await ctx.send(strings['markov']['errors']['nsfw'].format(str(ctx.author)))
 
@@ -472,6 +476,12 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         em = await markov_embed(str(ctx.author), message_formatted)
         output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
+
+@commands.is_owner()
+@client.command()
+async def send_emoji(ctx, name, id):
+    await ctx.message.delete()
+    await ctx.send(strings['emojis']['animated_emoji_template'].format(name, int(id)))
 
 
 async def get_blocklist(user_id):
@@ -577,16 +587,17 @@ async def build_data_profile(members, limit=50000):
         for summer_channel in guild.text_channels:
             adding = True
             for group in disabled_groups:
-                if summer_channel.category.name.lower() == group.lower():
+                try:
+                    if summer_channel.category.name.lower() == group.lower():
+                        adding = False
+                        break
+                except AttributeError:
                     adding = False
-                    break
-
             if adding:
                 counter = 0
                 already_added = 0
                 print("{} scraping for {} users".format(summer_channel.name, len(members)))
-                messages_tocheck = await summer_channel.history(limit=limit).flatten()
-                for message in messages_tocheck:
+                async for message in summer_channel.history(limit=limit, reverse=True):
                     if message.author in members:
                         name = opted_in(user_id=message.author.id)
                         try:
