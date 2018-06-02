@@ -1,5 +1,7 @@
 {
   "version": "0.1.1",
+  "limit" : 5000,
+  "limit_server" : 1000,
   "version_check": true,
   "discord": {
     "nyoom_interval" : 60,

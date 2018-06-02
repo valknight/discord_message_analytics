@@ -14,7 +14,7 @@ from config import config, strings
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.2"
+__version__ = "0.2.1"
 
 if config['version']!=__version__:
     if config['version_check']:
@@ -259,7 +259,7 @@ def opted_in(user=None, user_id=None):
     return results[0][1]
 
 
-async def get_messages(user_id):
+async def get_messages(user_id, limit):
     """
     user_id : ID of user you want to get messages for
 
@@ -269,7 +269,7 @@ async def get_messages(user_id):
     channels: list of all channels relevant to messages, in same order
     """
     username = opted_in(user_id=user_id)
-    get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC"
+    get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC LIMIT " + limit
     cursor.execute(get_messages, (username, ))
     results = cursor.fetchall()
     messages = []
@@ -371,17 +371,10 @@ async def markov_embed(title, message):
 
 
 @client.command(aliases=["m_s"])
-async def markov_server(ctx, run: bool=False, nsfw: bool=False, selected_channel: discord.TextChannel=None):
+async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
     """
     Generates markov output based on entire server's messages.
     """
-    if client.owner_id!=ctx.author.id:
-        return await ctx.send(strings['errors']['disabled_high_load'])
-    if run is not True:
-        return await ctx.send("Did not specify owner running, cancelled as high load command.")
-    if (not ctx.message.channel.is_nsfw()) and nsfw:
-        return await ctx.send(strings['markov']['errors']['nsfw'].format(str(ctx.author)))
-
     output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
 
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
@@ -392,7 +385,7 @@ async def markov_server(ctx, run: bool=False, nsfw: bool=False, selected_channel
         for server in client.guilds:
             for member in server.members:
                 if opted_in(user_id=member.id) is not False:
-                    messages, channels = await get_messages(member.id)
+                    messages, channels = await get_messages(member.id, str(config['limit_server']))
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
                     for m in text_temp:
                         text.append(m)
@@ -439,7 +432,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         username = opted_in(user_id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-        messages, channels = await get_messages(ctx.author.id)
+        messages, channels = await get_messages(ctx.author.id, str(config['limit']))
 
         text = []
 
