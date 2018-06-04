@@ -259,7 +259,7 @@ def opted_in(user=None, user_id=None):
     return results[0][1]
 
 
-async def get_messages(user_id, limit):
+async def get_messages(user_id, limit: int):
     """
     user_id : ID of user you want to get messages for
 
@@ -269,7 +269,7 @@ async def get_messages(user_id, limit):
     channels: list of all channels relevant to messages, in same order
     """
     username = opted_in(user_id=user_id)
-    get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC LIMIT " + limit
+    get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC LIMIT " + str(int(limit))
     cursor.execute(get_messages, (username, ))
     results = cursor.fetchall()
     messages = []
@@ -385,7 +385,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
         for server in client.guilds:
             for member in server.members:
                 if opted_in(user_id=member.id) is not False:
-                    messages, channels = await get_messages(member.id, str(config['limit_server']))
+                    messages, channels = await get_messages(member.id, config['limit_server'])
                     text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
                     for m in text_temp:
                         text.append(m)
@@ -432,7 +432,7 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         username = opted_in(user_id=ctx.author.id)
         if not username:
             return await output.edit(content=output.content + strings['markov']['errors']['not_opted_in'])
-        messages, channels = await get_messages(ctx.author.id, str(config['limit']))
+        messages, channels = await get_messages(ctx.author.id, config['limit'])
 
         text = []
 
@@ -502,11 +502,11 @@ async def blocklist(ctx, command=None, word=None):
     await ctx.message.delete()
     if command is None:
         return await ctx.send("""
-No subcommand selected - please enter a subcommand for your blocklist.
+    No subcommand selected - please enter a subcommand for your blocklist.
 
-?blocklist add [word] : Add word to blocklist
-?blocklist remove [word] : Remove word from blocklist
-?blocklist get : Get PM of current blocklist
+    ?blocklist add [word] : Add word to blocklist
+    ?blocklist remove [word] : Remove word from blocklist
+    ?blocklist get : Get PM of current blocklist
             """)
     #fetch current blocklist
     blockL = await get_blocklist(ctx.author.id)
