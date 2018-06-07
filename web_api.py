@@ -239,6 +239,7 @@ def count_messages():
                 for word in message.split(" "):
                     if word.lower() in requirelist:
                         count += 1
+                        break
 
     to_return = dict(count=count, users=users)
     return jsonify(to_return)
