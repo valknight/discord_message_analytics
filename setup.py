@@ -59,6 +59,14 @@ CREATE TABLE `blocklists` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 """
 
+apikeys = """
+CREATE TABLE `apikeys` (
+  `key_id` int(32) NOT NULL AUTO_INCREMENT,
+  `key` varchar(33) NOT NULL,
+  PRIMARY KEY (`key_id`),
+  UNIQUE KEY `key` (`key`)
+) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8
+"""
 def make_table(query):
   try:
     cursor.execute(query)
@@ -73,4 +81,6 @@ print("\nCreating markovs table")
 make_table(markovs)
 print("\nCreating blocklist table")
 make_table(blocklist)
+print("\nCreating apikeys table")
+make_table(apikeys)
 print("\nDone!")
