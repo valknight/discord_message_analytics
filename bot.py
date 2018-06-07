@@ -14,7 +14,7 @@ from config import config, strings
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.2.1"
+__version__ = "0.3"
 
 if config['version']!=__version__:
     if config['version_check']:

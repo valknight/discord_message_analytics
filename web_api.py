@@ -1,4 +1,5 @@
 import mysql.connector
+import markovify
 import json
 import random
 import string
@@ -45,14 +46,16 @@ def requires_api_access (f):
         try:
             api = request.args.get("api_key")
             get_keys = "SELECT `key` FROM `apikeys`"
+            cnx.commit()
             cursor.execute(get_keys)
             results = cursor.fetchall()
             valid = False
+            if len(results) == 0:
+                return f(*args, **kwargs)
             for result in results:
                 if str(api) == str(result[0]):
                     valid = True
-            if len(results) == 0:
-                valid=True
+
             if not valid:
                 raise InvalidUsage('API key incorrect', status_code=401)
             return f(*args, **kwargs)
@@ -73,11 +76,10 @@ def handle_invalid_usage(error):
 def index():
     return """
 <body style="font-family:Arial;font-size:2em;padding:30px">
-All of these requests require an API key unless otherwise specified.
-<hr>
+All of these requests require an API key unless otherwise specified. If no API keys exist, you don't have to pass one, but we HIGHLY recommend you make one.
+Pass this using param <i>api_key</i>
+<h6>GET methods</h6>
 <b>/api/v1/generate_api_key</b> - this is used to create a new API key.
-<br>
-api_key = Existing api key - if no keys exist, this is ignored, and this method runs
 <hr>
 <b>/api/v1/messages</b> - get's messages for ONE user
 <br>
@@ -86,7 +88,22 @@ user = username <i>in DB</i> of user we want to get messages from
 blacklist = JSON formatted list of words we want to filter out
 <br>
 limit = integer for max number of messages we want to get
+<hr>
+<b>/api/v1/count_messages</b> - count's messages for entire server
 <br>
+blacklist = JSON formatted list of words we want to filter out
+<br>
+requirelist = JSON formatted list of words required for the message to be counted - use this if you want to search for instances of a word.
+<hr>
+<b>/api/v1/markov</b> - get's messages for ONE user
+<br>
+user = username <i>in DB</i> of user we want to get messages from
+<br>
+blacklist = JSON formatted list of words we want to filter out
+<br>
+limit = integer for max number of messages we want to get
+<br>
+state_size = integer for state size of markov - 1 or 2 is recommended, 3 if you want it to be true to life - any higher WILL cause issues, such as nothing being returned
 </body>
     """
 
@@ -109,10 +126,12 @@ def get_messages(table_name, blocklist, limit = None, requirelist=[]):
     results = cursor.fetchall()
     messages = []
     channels = []
+    blocklist_full = blocklist + get_blocklist(get_id(table_name))
+
     for result in results:
         valid = True
         for word in result[0].split(" "):
-            if word in blocklist:
+            if word in blocklist_full:
                 valid = False
         if valid:
             if requirelist==[]:
@@ -126,6 +145,14 @@ def get_messages(table_name, blocklist, limit = None, requirelist=[]):
 
     return messages, channels
 
+
+def get_id(table_name):
+    query = "SELECT user_id FROM users WHERE username = %s"
+    cursor.execute(query, (table_name, ))
+    results = cursor.fetchall()
+    if len(results)==0:
+        return None
+    return (results[0])[0]
 
 def get_blocklist(user_id):
     user_id = str(user_id)
@@ -230,6 +257,25 @@ def messages():
         to_return.append(dict(message=messages[x], channel=channels[x]))
     return jsonify(to_return)
 
+@app.route('/api/v1/markov', methods=['GET'])
+@requires_api_access
+def markov():
 
+    blocklist = request.args.get("blocklist", "[]")
+    blocklist = json.loads(blocklist)
+
+    try:
+        messages, channels = get_messages(request.args.get('user'), blocklist=blocklist, limit=request.args.get('limit',1000))
+    except mysql.connector.errors.ProgrammingError:
+        raise InvalidUsage('User data does not exist', status_code=400)
+    
+    text = ""
+    for message in messages:
+        text += message + "\n"
+
+    text_model = markovify.NewlineText(text, state_size=int(request.args.get("state_size", 1)))
+    text = text_model.make_short_sentence(140)
+    return jsonify(dict(markov=text))
+    
 if __name__ == "__main__":
-	app.run(**config['web'])
+    app.run(**config['web'])
