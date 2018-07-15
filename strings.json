@@ -3,19 +3,19 @@
     "bot_name": "GSSP Experiments",
     "owner_firstname": "Val",
     "owner_lastname": "Knight",
-    "config_invalid" : "Version set to {}, but config is made for {}\nRerun config.py, then check the new example config, and ensure you aren't missing any new values.",
-    "config_invalid_ignored" : "Version set to {}, but config is made for {}\nWe're ignoring it, as you have this set in your config, but please for the love of god don't do this. You *will* run into issues if you leave this on forever.",
+    "config_invalid": "Version set to {}, but config is made for {}\nRerun config.py, then check the new example config, and ensure you aren't missing any new values.",
+    "config_invalid_ignored": "Version set to {}, but config is made for {}\nWe're ignoring it, as you have this set in your config, but please for the love of god don't do this. You *will* run into issues if you leave this on forever.",
     "delete_message_title": "{} deleted message",
     "delete_message_desc": "User deleted this message.",
-    "errors" : {
+    "errors": {
       "disabled_high_load": "This command has been disabled due to high server load. Sorry!",
       "not_owner": "You are not the owner - try to steal {}'s identity, then go again",
-      "no_pm" : "This command cannot be ran in private message",
-      "disabled" : "This command is disabled",
-      "argument_missing" : "Argument missing: {}",
-      "bad_argument" : "Bad argument given: {}",
+      "no_pm": "This command cannot be ran in private message",
+      "disabled": "This command is disabled",
+      "argument_missing": "Argument missing: {}",
+      "bad_argument": "Bad argument given: {}",
       "too_many_arguments": "Too many arguments given.",
-      "command_not_found" : "oopsy woopsy! UwU **you** made a fucky wucky! a wittle fucko boingo!\n\nThat Command doesn't exist.",
+      "command_not_found": "oopsy woopsy! UwU **you** made a fucky wucky! a wittle fucko boingo!\n\nThat Command doesn't exist.",
       "no_permission": "You do not have permission to do this, blah blah blah, don't try running this with sudo, won't work",
       "placeholder": "Placeholder embed. If you see this please message {}.",
       "command_error": "oopsy woopsy! UwU we made a fucky wucky! a wittle fucko boingo!\nGive this to a code ninja xD rawr: {}"
@@ -46,6 +46,20 @@
         "title_server": "GSSP but it's been processed by a robot"
       }
     },
+    "tagger": {
+      "title": "**Loading... **",
+      "status": {
+        "messages": "Grabbing messages",
+        "analytical_data": "Analysing data"
+      },
+      "errors": {
+        "not_opted_in": ":exclamation: \n Sorry, you need to be opted in to use GSS experiments. Use ?experiments in #bot_spam to get started.",
+        "nsfw": "{} - You cannot include NSFW data in a SFW chat"
+      },
+      "output": {
+        "footer": "This based off the users comments. To delete, click the \"{}\""
+      }
+    },
     "blocklist": {
       "status": {
         "no_word": "Please specify a word.",
@@ -58,19 +72,19 @@
         "empty": "Blacklist is empty."
       }
     },
-    "process_check" : {
-        "status" : {
-            "checking" : "Checking to see if user table exists",
-            "not_opted_in" : "User has not opted into processing. Sorry!",
-            "opted_in" : "User has opted in!"
-        }
+    "process_check": {
+      "status": {
+        "checking": "Checking to see if user table exists",
+        "not_opted_in": "User has not opted into processing. Sorry!",
+        "opted_in": "User has opted in!"
+      }
     },
-    "nyoom_calc" : {
-        "status" : {
-            "calculating" : "Calculating Nyoom metric",
-            "not_opted_in" : "We cannot calculate your nyoom without you opting in. Run ?experiments to get started!",
-            "finished" : "{} has posted {} messages, over {:.2f} hours of activity - giving a nyoom metric of {:.2f}"
-        }
+    "nyoom_calc": {
+      "status": {
+        "calculating": "Calculating Nyoom metric",
+        "not_opted_in": "We cannot calculate your nyoom without you opting in. Run ?experiments to get started!",
+        "finished": "{} has posted {} messages, over {:.2f} hours of activity - giving a nyoom metric of {:.2f}"
+      }
     },
     "data_collection": {
       "opt_in_title": "Welcome to GSSP experiments! :atom:",

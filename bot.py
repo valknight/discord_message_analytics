@@ -1,3 +1,4 @@
+import Algorithmia
 import datetime
 import discord
 from discord.ext import commands
@@ -14,7 +15,7 @@ from config import config, strings
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.3"
+__version__ = "0.4"
 
 if config['version']!=__version__:
     if config['version_check']:
@@ -360,12 +361,13 @@ async def get_delete_emoji():
         emoji_name = delete_emoji.name
     else:
         emoji_name = "❌"
-    return emoji_name
+    return emoji_name, delete_emoji
 
 
 async def markov_embed(title, message):
     em = discord.Embed(title=title, description=message)
     name = await get_delete_emoji()
+    name = name[0]
     em.set_footer(text=strings['markov']['output']['footer'].format(name))
     return em
 
@@ -681,5 +683,60 @@ async def nyoom(ctx, user: discord.Member=None):
     #print the nyoom metric
     return await output.edit(content=strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
 
+@client.command(aliases=["t"])
+async def tagger(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
+    """
+    Generates tags for user who ran this command
+    """
+    if (not ctx.message.channel.is_nsfw()) and nsfw:
+        return await ctx.send(strings['tagger']['errors']['nsfw'].format(str(ctx.author)))
+
+    output = await ctx.send(strings['tagger']['title'] + strings['emojis']['loading'])
+
+    await output.edit(content=output.content + "\n" + strings['tagger']['status']['messages'])
+    async with ctx.channel.typing():
+        username = opted_in(user_id=ctx.author.id)
+        if not username:
+            return await output.edit(content=output.content + strings['tagger']['errors']['not_opted_in'])
+        messages, channels = await get_messages(ctx.author.id, config['limit'])
+
+        text = []
+
+        text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
+
+        text1 = ""
+        for m in text:
+            text1 += str(m) + "\n"
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['tagger']['status']['analytical_data'])
+
+        algo_client = Algorithmia.client(config['algorithmia_key'])
+        algo = algo_client.algo('nlp/AutoTag/1.0.1')
+        await output.delete()
+        response = algo.pipe(text1)
+        print(response.result)
+        tags = list(response.result)
+        tag_str = ""
+        for tag in tags:
+            tag_str = "- " + tag + "\n" + tag_str
+        em = await markov_embed("Tags for "+str(ctx.author), tag_str)
+        output = await ctx.send(embed=em)
+    emoji = await get_delete_emoji()
+    emoji = emoji[1]
+    return await delete_option(client, ctx, output, emoji)
+
+if config['despacito_enabled']:
+    @client.command()
+    async def despacito(ctx):
+        from discord.voice_client import  VoiceClient
+        for channel in ctx.guild.voice_channels:
+            if str(channel)=="Music":
+                voice_c = channel
+        try:
+            if not ctx.voice_client.is_playing():
+                print()
+        except AttributeError:
+            vc = await voice_c.connect()
+        return await ctx.send(';play https://www.youtube.com/watch?v=kJQP7kiw5Fk')
 if __name__=="__main__":
     client.run(token)
+

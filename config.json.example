@@ -1,5 +1,5 @@
 {
-  "version": "0.3",
+  "version": "0.4",
   "limit" : 5000,
   "limit_server" : 1000,
   "version_check": true,
@@ -29,5 +29,7 @@
     "debug": false,
     "host": "0.0.0.0"
   },
-  "language": "english"
+  "language": "english",
+  "despacito_enabled" : false,
+  "algorithmia_key": "key_goes_here"
 }
