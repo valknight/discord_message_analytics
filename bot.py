@@ -1,15 +1,14 @@
-import Algorithmia
-import datetime
-import discord
-from discord.ext import commands
-import json
-import markovify
-import math
-import mysql.connector
-import re
-import time
-import sys
 import concurrent
+import datetime
+import json
+import sys
+
+import Algorithmia
+import discord
+import markovify
+import mysql.connector
+from discord.ext import commands
+
 from config import config, strings
 
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
@@ -17,7 +16,7 @@ client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=confi
 token = config['discord']['token']
 __version__ = "0.4"
 
-if config['version']!=__version__:
+if config['version'] != __version__:
     if config['version_check']:
         print(strings['config_invalid'].format(__version__, str(config['version'])))
         sys.exit(1)
@@ -45,7 +44,6 @@ Your data may also be stored on data centres around the world, due to our usage 
 """
 
 
-
 @client.event
 async def on_ready():
     print('Logged in as')
@@ -56,14 +54,15 @@ async def on_ready():
 
     print()
 
-    print("Ensuring no data was lost during downtime. This may take a while if a lot of users are part of your experiments")
+    print(
+        "Ensuring no data was lost during downtime. This may take a while if a lot of users are part of your experiments")
     members = []
     for server in client.guilds:
         for member in server.members:
             name = opted_in(user_id=member.id)
             if name is not False:
                 members.append(member)
-    
+
     await build_data_profile(members, limit=None)
 
 
@@ -78,18 +77,23 @@ async def on_message(message):
             channel.id, message.channel, message.channel.is_nsfw())
         if is_allowed:
             try:
-                cursor.execute(add_message_custom, (user_exp, int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
+                cursor.execute(add_message_custom, (
+                    user_exp, int(message.id), str(message.channel.id),
+                    message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    message.content,))
             except mysql.connector.errors.IntegrityError:
                 pass
     # this records analytical data - don't adjust this without reading
     # Discord TOS first
     try:
-        cursor.execute(add_message, (int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
+        cursor.execute(add_message,
+                       (int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
         cnx.commit()
     except mysql.connector.errors.IntegrityError:
         pass
     try:
-        if message.content[len(config['discord']['prefix'])] == config['discord']['prefix']:#if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
+        if message.content[len(config['discord']['prefix'])] == config['discord'][
+            'prefix']:  # if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
             return
     except IndexError:
         return
@@ -98,52 +102,54 @@ async def on_message(message):
 
 @client.event
 async def on_command_error(ctx, error):
-        if isinstance(error, commands.CommandInvokeError):
-            embed = discord.Embed(title='Command Error')
-            embed.description = str(error)
-            embed.add_field(name='Server', value=ctx.guild)
-            embed.add_field(name='Channel', value=ctx.channel.mention)
-            embed.add_field(name='User', value=ctx.author)
-            embed.add_field(name='Message', value=ctx.message.content)
-            embed.timestamp = datetime.datetime.utcnow()
-            await ctx.send(embed=embed)
+    if isinstance(error, commands.CommandInvokeError):
+        embed = discord.Embed(title='Command Error')
+        embed.description = str(error)
+        embed.add_field(name='Server', value=ctx.guild)
+        embed.add_field(name='Channel', value=ctx.channel.mention)
+        embed.add_field(name='User', value=ctx.author)
+        embed.add_field(name='Message', value=ctx.message.content)
+        embed.timestamp = datetime.datetime.utcnow()
+        await ctx.send(embed=embed)
+    else:
+        if isinstance(error, commands.NoPrivateMessage):
+            embed = discord.Embed(description="")
+        elif isinstance(error, commands.DisabledCommand):
+            embed = discord.Embed(description=strings['errors']['disabled'])
+        elif isinstance(error, commands.MissingRequiredArgument):
+            embed = discord.Embed(description=strings['errors']['argument_missing'].format(error.args[0]))
+        elif isinstance(error, commands.BadArgument):
+            embed = discord.Embed(description=strings['errors']['bad_argument'].format(error.args[0]))
+        elif isinstance(error, commands.TooManyArguments):
+            embed = discord.Embed(description=strings['errors']['too_many_arguments'])
+        elif isinstance(error, commands.CommandNotFound):
+            if not config['discord']['prompt_command_exist']:
+                return
+            embed = discord.Embed(description=strings['errors']['command_not_found'])
+        elif isinstance(error, commands.BotMissingPermissions):
+            embed = discord.Embed(description="{}".format(error.args[0].replace("Bot", strings['bot_name'])))
+        elif isinstance(error, commands.MissingPermissions):
+            embed = discord.Embed(description="{}".format(error.args[0]))
+        elif isinstance(error, commands.NotOwner):
+            embed = discord.Embed(description=strings['errors']['not_owner'].format(strings['owner_firstname']))
+        elif isinstance(error, commands.CheckFailure):
+            embed = discord.Embed(description=strings['errors']['no_permission'])
+        elif isinstance(error, commands.CommandError):
+            embed = discord.Embed(description=strings['errors']['command_error'].format(error.args[0]))
         else:
-            if isinstance(error, commands.NoPrivateMessage):
-                embed = discord.Embed(description="")
-            elif isinstance(error, commands.DisabledCommand):
-                embed = discord.Embed(description=strings['errors']['disabled'])
-            elif isinstance(error, commands.MissingRequiredArgument):
-                embed = discord.Embed(description=strings['errors']['argument_missing'].format(error.args[0]))
-            elif isinstance(error, commands.BadArgument):
-                embed = discord.Embed(description=strings['errors']['bad_argument'].format(error.args[0]))
-            elif isinstance(error, commands.TooManyArguments):
-                embed = discord.Embed(description=strings['errors']['too_many_arguments'])
-            elif isinstance(error, commands.CommandNotFound):
-                if not config['discord']['prompt_command_exist']:
-                    return
-                embed = discord.Embed(description=strings['errors']['command_not_found'])
-            elif isinstance(error, commands.BotMissingPermissions):
-                embed = discord.Embed(description="{}".format(error.args[0].replace("Bot", strings['bot_name'])))
-            elif isinstance(error, commands.MissingPermissions):
-                embed = discord.Embed(description="{}".format(error.args[0]))
-            elif isinstance(error, commands.NotOwner):
-                embed = discord.Embed(description=strings['errors']['not_owner'].format(strings['owner_firstname']))
-            elif isinstance(error, commands.CheckFailure):
-                embed = discord.Embed(description=strings['errors']['no_permission'])
-            elif isinstance(error, commands.CommandError):
-                embed = discord.Embed(description=strings['errors']['command_error'].format(error.args[0]))
-            else:
-                embed = discord.Embed(
-                    description=strings['errors']['placeholder'].format(strings['bot_name']))
-            if embed:
-                embed.colour = 0x4c0000
-                await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+            embed = discord.Embed(
+                description=strings['errors']['placeholder'].format(strings['bot_name']))
+        if embed:
+            embed.colour = 0x4c0000
+            await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+
 
 @commands.is_owner()
 @client.command()
 async def thonkang(cnx):
     await cnx.message.delete()
     await   cnx.send(strings['emojis']['loading'])
+
 
 @commands.is_owner()
 @client.command()
@@ -158,7 +164,8 @@ async def process_server(ctx):
         print(str(channel.name) + " is being processed. Please wait.")
         async for message in channel.history(limit=None, reverse=True):
             try:
-                cursor.execute(add_message, (int(message.id), str(ctx.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
+                cursor.execute(add_message,
+                               (int(message.id), str(ctx.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
             except mysql.connector.errors.DataError:
                 print("Couldn't insert, probs a time issue")
             except mysql.connector.errors.IntegrityError:
@@ -191,12 +198,12 @@ async def experiments(ctx):
         return await channel.send(embed=em)
     except mysql.connector.errors.IntegrityError:
         get_user = "SELECT `username` FROM `users` WHERE  `user_id`=%s;"
-        cursor.execute(get_user, (author.id, ))
+        cursor.execute(get_user, (author.id,))
         username = (cursor.fetchall()[0])[0]
 
         opt_in_user = "UPDATE `users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
 
-        cursor.execute(opt_in_user, (author.id, ))
+        cursor.execute(opt_in_user, (author.id,))
         create_table = """
         CREATE TABLE `%s` (
             `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -208,7 +215,7 @@ async def experiments(ctx):
         """
 
         try:
-            cursor.execute(create_table, (username, ))
+            cursor.execute(create_table, (username,))
             await channel.send(strings['data_collection']['created_record'].format(username))
         except mysql.connector.errors.ProgrammingError:
             await channel.send(strings['data_collection']['update_record'].format(username))
@@ -250,7 +257,7 @@ def opted_in(user=None, user_id=None):
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
         user = user_id
 
-    cursor.execute(get_user, (user, ))
+    cursor.execute(get_user, (user,))
     results = cursor.fetchall()
     try:
         if results[0][0] != 1:
@@ -271,7 +278,7 @@ async def get_messages(user_id, limit: int):
     """
     username = opted_in(user_id=user_id)
     get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC LIMIT " + str(int(limit))
-    cursor.execute(get_messages, (username, ))
+    cursor.execute(get_messages, (username,))
     results = cursor.fetchall()
     messages = []
     channels = []
@@ -306,11 +313,11 @@ def channel_allowed(channel_id, existing_channel, nsfw=False):
         return False
 
     if channel.is_nsfw():
-        return bool(nsfw) # checks if user wants / is allowed explicit markovs
+        return bool(nsfw)  # checks if user wants / is allowed explicit markovs
         # this means that if the channel *is* NSFW, we return True, but if it isn't, we return False
-    else: # channel is SFW
+    else:  # channel is SFW
         if bool(nsfw):
-            return False # this stops SFW chats from being included in NSFW markovs
+            return False  # this stops SFW chats from being included in NSFW markovs
 
     return True
 
@@ -373,7 +380,7 @@ async def markov_embed(title, message):
 
 
 @client.command(aliases=["m_s"])
-async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
+async def markov_server(ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
     """
     Generates markov output based on entire server's messages.
     """
@@ -397,15 +404,18 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
             text1 += str(m) + "\n"
 
         try:
-            await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['building_markov'])
+            await output.edit(
+                content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status'][
+                    'building_markov'])
             # text_model = POSifiedText(text)
             text_model = markovify.NewlineText(text, state_size=3)
         except KeyError:
             return ctx.send('Not enough data yet, sorry!')
-        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
+        await output.edit(
+            content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         text = text_model.make_short_sentence(140)
         attempt = 0
-        while(True):
+        while (True):
             attempt += 1
             if attempt >= 10:
                 return await ctx.send(strings['markov']['errors']['failed_to_generate'])
@@ -420,7 +430,7 @@ async def markov_server(ctx, nsfw: bool=False, selected_channel: discord.TextCha
 
 
 @client.command(aliases=["m"])
-async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
+async def markov(ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
     """
     Generates markov output for user who ran this command
     """
@@ -445,14 +455,16 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
             text1 += str(m) + "\n"
 
         try:
-            await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['building_markov'])
+            await output.edit(
+                content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status'][
+                    'building_markov'])
             # text_model = POSifiedText(text)
             text_model = markovify.NewlineText(text, state_size=3)
         except KeyError:
             return ctx.send('Not enough data yet, sorry!')
 
         attempt = 0
-        while(True):
+        while (True):
             attempt += 1
             if attempt >= 10:
                 await output.delete()
@@ -462,15 +474,18 @@ async def markov(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
             if message_formatted != "None":
                 break
 
-        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['analytical_data'])
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status'][
+            'analytical_data'])
         await save_markov(text_model, ctx.author.id)
 
-        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
+        await output.edit(
+            content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status']['making'])
         await output.delete()
 
         em = await markov_embed(str(ctx.author), message_formatted)
         output = await ctx.send(embed=em)
     return await delete_option(client, ctx, output, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
+
 
 @commands.is_owner()
 @client.command()
@@ -482,12 +497,12 @@ async def send_emoji(ctx, name, id):
 async def get_blocklist(user_id):
     user_id = str(user_id)
     get = "SELECT blocklist FROM blocklists WHERE user_id = %s"
-    cursor.execute(get, (user_id, ))
+    cursor.execute(get, (user_id,))
     resultset = cursor.fetchall()
     if not resultset:
-        #add a blank blocklist
+        # add a blank blocklist
         create_user = "INSERT INTO blocklists (user_id, blocklist) VALUES (%s, '[]')"
-        cursor.execute(create_user, (user_id, ))
+        cursor.execute(create_user, (user_id,))
         return []
     return json.loads(resultset[0][0])
 
@@ -510,39 +525,42 @@ async def blocklist(ctx, command=None, word=None):
     ?blocklist remove [word] : Remove word from blocklist
     ?blocklist get : Get PM of current blocklist
             """)
-    #fetch current blocklist
+    # fetch current blocklist
     blockL = await get_blocklist(ctx.author.id)
     update_blocklist = "UPDATE blocklists SET blocklist = %s WHERE user_id = %s"
 
     if command == "add":
         if word is None:
-            return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=config['discord']['delete_timeout'])
+            return await ctx.send(strings['blocklist']['status']['no_word'],
+                                  delete_after=config['discord']['delete_timeout'])
         msg = await ctx.send(strings['blocklist']['status']['adding'])
 
-        #check if the word is already on the list. throw error if it is
+        # check if the word is already on the list. throw error if it is
         if word != blockL:
             # if its not then add it
             blockL.append(word)
             # update DB with new list
             new_json = json.dumps(blockL)
-            cursor.execute(update_blocklist, (new_json, ctx.author.id, ))
+            cursor.execute(update_blocklist, (new_json, ctx.author.id,))
         else:
             await ctx.send(strings['blocklist']['status']['exist'])
 
     elif command == "remove":
         if word is None:
-            return await ctx.send(strings['blocklist']['status']['no_word'], delete_after=config['discord']['delete_timeout'])
+            return await ctx.send(strings['blocklist']['status']['no_word'],
+                                  delete_after=config['discord']['delete_timeout'])
         msg = await ctx.send(strings['blocklist']['status']['removing'])
 
-        #try and remove it from list (use a try statement, catching ValueError)
+        # try and remove it from list (use a try statement, catching ValueError)
         try:
             blockL.remove(word)
         except ValueError:
-            return await ctx.send(strings['blocklist']['status']['not_exist'], delete_after=config['discord']['delete_timeout'])
+            return await ctx.send(strings['blocklist']['status']['not_exist'],
+                                  delete_after=config['discord']['delete_timeout'])
 
         # update DB with new list
         new_json = json.dumps(blockL)
-        cursor.execute(update_blocklist, (new_json, ctx.author.id, ))
+        cursor.execute(update_blocklist, (new_json, ctx.author.id,))
 
     elif command == "get":
         # make it nice to look at
@@ -551,12 +569,13 @@ async def blocklist(ctx, command=None, word=None):
         else:
             msg = strings['blocklist']['status']['list']
             for item in blockL:
-                part = ' ' + item + ','#done so that the merge with the long string is only done once per word
+                part = ' ' + item + ','  # done so that the merge with the long string is only done once per word
                 msg += part
-            msg = msg[:-1]#trim off the trailing ,
+            msg = msg[:-1]  # trim off the trailing ,
         # send a private message with the nice to look at blocklist
         await ctx.author.send(msg)
-        msg = await ctx.send(strings['blocklist']['status']['complete'], delete_after=config['discord']['delete_timeout'])
+        msg = await ctx.send(strings['blocklist']['status']['complete'],
+                             delete_after=config['discord']['delete_timeout'])
     else:
         return await ctx.send("""
 No subcommand selected - please enter a subcommand for your blocklist.
@@ -596,15 +615,22 @@ async def build_data_profile(members, limit=50000):
                     if message.author in members:
                         name = opted_in(user_id=message.author.id)
                         try:
-                            cursor.execute(add_message_custom, (name, int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S'), message.content,))
+                            cursor.execute(add_message_custom, (name, int(message.id), str(message.channel.id),
+                                                                message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                                                                message.content,))
                             counter += 1
                         except mysql.connector.errors.DataError:
                             print("Couldn't insert, probs a time issue")
                         except mysql.connector.errors.IntegrityError:
                             already_added += 1
-                print("{} scraped for {} users - added {} messages, found {} already added".format(summer_channel.name, len(members), counter, already_added))
+                print("{} scraped for {} users - added {} messages, found {} already added".format(summer_channel.name,
+                                                                                                   len(members),
+                                                                                                   counter,
+                                                                                                   already_added))
                 cnx.commit()
         print("Completed guild {}".format(guild.name))
+
+
 async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord']['delete_timeout']):
     """Utility function that allows for you to add a delete option to the end of a command.
     This makes it easier for users to control the output of commands, esp handy for random output ones."""
@@ -618,11 +644,12 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
         await message.remove_reaction(delete_emoji, bot.user)
         await message.remove_reaction(delete_emoji, ctx.author)
         em = discord.Embed(title=str(ctx.message.author) +
-                           " deleted message", description="User deleted this message.")
+                                 " deleted message", description="User deleted this message.")
 
         return await message.edit(embed=em)
     except concurrent.futures._base.TimeoutError:
         await message.remove_reaction(delete_emoji, bot.user)
+
 
 async def get_times(username):
     """
@@ -633,17 +660,17 @@ async def get_times(username):
     times: list of all timestamps of users messages
     """
 
-
     get_times = "SELECT `time` FROM `%s` ORDER BY TIME ASC"
-    cursor.execute(get_times, (username, ))
+    cursor.execute(get_times, (username,))
     timesA = cursor.fetchall()
     times = []
     for time in timesA:
         times.append(time[0])
     return times
 
+
 @client.command()
-async def nyoom(ctx, user: discord.Member=None):
+async def nyoom(ctx, user: discord.Member = None):
     """
     Calculated the specified users nyoom metric.
     e.g. The number of messages per hour they post while active (posts within 10mins of each other count as active)
@@ -663,28 +690,32 @@ async def nyoom(ctx, user: discord.Member=None):
     times = await get_times(username)
     # group them into periods of activity
     periods = []
-    curPeriod = [times[0],times[0],0] # begining of period, end of period, number of messages in period
+    curPeriod = [times[0], times[0], 0]  # begining of period, end of period, number of messages in period
     for time in times:
-        if time > curPeriod[1] + datetime.timedelta(0,interval): # if theres more than a 10min dif between this time and last time
-            #make a new period
+        if time > curPeriod[1] + datetime.timedelta(0,
+                                                    interval):  # if theres more than a 10min dif between this time and last time
+            # make a new period
             periods.append(curPeriod)
-            curPeriod = [time,time,1]
+            curPeriod = [time, time, 1]
         else:
-            curPeriod[1] = time#the period now ends with the most recent timestamp
-            curPeriod[2] += 1#add the message to the period
-    #sum the total length of activity periods and divide by total number of messages
+            curPeriod[1] = time  # the period now ends with the most recent timestamp
+            curPeriod[2] += 1  # add the message to the period
+    # sum the total length of activity periods and divide by total number of messages
     totalT = 0
     totalM = 0
     for period in periods:
-        totalM += period[2] #sum all the number of messages [can probs be done with len(times)]
-        totalT += ((period[1]-period[0]).total_seconds()/60) +1 # total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
-    totalT /= 60 # makes the total active time and nyoom_metric count hours of activity rather than minutes
-    nyoom_metric = totalM / totalT#number of message per minute during periods of activity
-    #print the nyoom metric
-    return await output.edit(content=strings['nyoom_calc']['status']['finished'].format(username,totalM,totalT,nyoom_metric))
+        totalM += period[2]  # sum all the number of messages [can probs be done with len(times)]
+        totalT += ((period[1] - period[
+            0]).total_seconds() / 60) + 1  # total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
+    totalT /= 60  # makes the total active time and nyoom_metric count hours of activity rather than minutes
+    nyoom_metric = totalM / totalT  # number of message per minute during periods of activity
+    # print the nyoom metric
+    return await output.edit(
+        content=strings['nyoom_calc']['status']['finished'].format(username, totalM, totalT, nyoom_metric))
+
 
 @client.command(aliases=["t"])
-async def tagger(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=None):
+async def tagger(ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
     """
     Generates tags for user who ran this command
     """
@@ -707,7 +738,8 @@ async def tagger(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         text1 = ""
         for m in text:
             text1 += str(m) + "\n"
-        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['tagger']['status']['analytical_data'])
+        await output.edit(content=output.content + strings['emojis']['success'] + "\n" + strings['tagger']['status'][
+            'analytical_data'])
 
         algo_client = Algorithmia.client(config['algorithmia_key'])
         algo = algo_client.algo('nlp/AutoTag/1.0.1')
@@ -718,18 +750,18 @@ async def tagger(ctx, nsfw: bool=False, selected_channel: discord.TextChannel=No
         tag_str = ""
         for tag in tags:
             tag_str = "- " + tag + "\n" + tag_str
-        em = await markov_embed("Tags for "+str(ctx.author), tag_str)
+        em = await markov_embed("Tags for " + str(ctx.author), tag_str)
         output = await ctx.send(embed=em)
     emoji = await get_delete_emoji()
     emoji = emoji[1]
     return await delete_option(client, ctx, output, emoji)
 
+
 if config['despacito_enabled']:
     @client.command()
     async def despacito(ctx):
-        from discord.voice_client import  VoiceClient
         for channel in ctx.guild.voice_channels:
-            if str(channel)=="Music":
+            if str(channel) == "Music":
                 voice_c = channel
         try:
             if not ctx.voice_client.is_playing():
@@ -737,6 +769,5 @@ if config['despacito_enabled']:
         except AttributeError:
             vc = await voice_c.connect()
         return await ctx.send(';play https://www.youtube.com/watch?v=kJQP7kiw5Fk')
-if __name__=="__main__":
+if __name__ == "__main__":
     client.run(token)
-
