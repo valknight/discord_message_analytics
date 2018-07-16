@@ -1,5 +1,5 @@
 {
-  "version": "0.5",
+  "version": "0.6",
   "limit" : 5000,
   "limit_server" : 1000,
   "version_check": true,
@@ -14,7 +14,8 @@
       "Channel Group 1",
       "Channel Group 2",
       "Channel Group 3"
-    ]
+    ],
+    "automated_channel": 468465400733237249
   },
   "mysql": {
     "user": "mysql_username",

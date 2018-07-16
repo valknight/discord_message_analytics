@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import os
+import subprocess
 import sys
 
 import Algorithmia
@@ -25,7 +26,7 @@ def restart():
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.5.1"
+__version__ = "0.6"
 
 if config['version'] == "0.5" and __version__ == "0.5.1":
     config['version'] = "0.5.1"
@@ -81,6 +82,8 @@ async def on_ready():
 """
     logger.info(log_in_message.format(client.user.name, client.user.id))
 
+    subprocess.Popen([sys.executable, "automated_messages.py"])
+    logger.info("Started automated messages sub-process")
     members = []
     total_members = 0
     for server in client.guilds:
@@ -89,7 +92,6 @@ async def on_ready():
             total_members += 1
             if name is not False:
                 members.append(member)
-    percent_opted_in = int((len(members) * 100) / total_members)
     messages_processed = "SELECT COUNT(*) FROM messages_detailed"
     cursor.execute(messages_processed)
     amount_full = (cursor.fetchall()[0])[0]
@@ -735,6 +737,30 @@ async def nyoom_server(ctx, user: discord.Member = None):
         content=strings['nyoom_calc']['status']['finished'].format("GSSP", totalM, totalT, nyoom_metric))
 
 
+@client.command()
+async def automated(ctx):
+    """
+    Calculated the specified users nyoom metric.
+    e.g. The number of messages per hour they post while active (posts within 10mins of each other count as active)
+
+    user : user to get nyoom metric for, if not author
+    """
+    if is_automated(ctx.author):
+        output = await ctx.channel.send("Opting you out of automation.")
+        query = "UPDATE `gssp_logging`.`users` SET `automate_opted_in`=b'0' WHERE `user_id`=%s;"
+        cursor.execute(query, (ctx.author.id,))
+        cnx.commit()
+        return await output.edit(
+            content='Opted out - you will be removed from the pool on the next refresh (IE: when the bot goes back around in a loop again)')
+
+    else:
+        output = await ctx.channel.send("Opting you into automation")
+        query = "UPDATE `gssp_logging`.`users` SET `automate_opted_in`=b'1' WHERE `user_id`=%s;"
+        cursor.execute(query, (ctx.author.id,))
+        cnx.commit()
+        return await output.edit(content='Opted in!')
+
+
 async def calculate_nyoom(output, user_id=None):
     # load interval between messages we're using from the configs
     interval = config['discord']['nyoom_interval']
@@ -856,5 +882,26 @@ if config['despacito_enabled']:
         except AttributeError:
             await voice_c.connect()
         return await ctx.send(';play https://www.youtube.com/watch?v=kJQP7kiw5Fk')
+
+
+def is_automated(user):
+    """
+    Returns true if user is opted in to automation, false if not
+    """
+    cnx.commit()
+    get_user = "SELECT `automate_opted_in` FROM `users` WHERE  `user_id`=%s;"
+    cursor.execute(get_user, (user.id,))
+    results = cursor.fetchall()
+    cnx.commit()
+    try:
+        if results[0][0] != 1:
+            return False
+    except IndexError:
+        return False
+
+    print(str(user))
+    return True
+
+
 if __name__ == "__main__":
     client.run(token)
