@@ -1,6 +1,9 @@
+#!/usr/bin/python36
 import concurrent
 import datetime
 import json
+import logging
+import os
 import sys
 
 import Algorithmia
@@ -11,12 +14,32 @@ from discord.ext import commands
 
 from config import config, strings
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def restart():
+    logger.info("Restarting. Please wait.")
+    os.system(sys.executable + ' bot.py')
+
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.4"
+__version__ = "0.5"
 
 if config['version'] != __version__:
+    if config['version'] == "0.4":
+        print("Found running 0.4. Running upgrades")
+        config['state_size'] = 2
+        print("Added state size to config")
+        config['version'] = "0.5"
+        print("Updated version")
+        json_to_save = json.dumps(config)
+        config_new = open("config.json", "w")
+        config_new.write(json_to_save)
+        config_new.close()
+        print("Saved new config file. Restarting.")
+        restart()
     if config['version_check']:
         print(strings['config_invalid'].format(__version__, str(config['version'])))
         sys.exit(1)
@@ -46,23 +69,30 @@ Your data may also be stored on data centres around the world, due to our usage 
 
 @client.event
 async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print("Has nitro: " + str(client.user.premium))
-    print('------')
+    log_in_message = """
 
-    print()
+[Connected to Discord]
+[Username]  -   [ {} ]
+[User  ID]  -   [ {} ]
 
-    print(
-        "Ensuring no data was lost during downtime. This may take a while if a lot of users are part of your experiments")
+"""
+    logger.info(log_in_message.format(client.user.name, client.user.id))
+
     members = []
+    total_members = 0
     for server in client.guilds:
         for member in server.members:
             name = opted_in(user_id=member.id)
+            total_members += 1
             if name is not False:
                 members.append(member)
-
+    percent_opted_in = int((len(members) * 100) / total_members)
+    messages_processed = "SELECT COUNT(*) FROM messages_detailed"
+    cursor.execute(messages_processed)
+    amount_full = cursor.fetchone()[0]
+    logger.info("Bot running with " + str(
+        amount_full) + " messages avaliable fully, and . If this is very low, we cannot guarantee accurate results.")
+    logger.info("Initialising building data profiles on existing messages. This will take a while.")
     await build_data_profile(members, limit=None)
 
 
@@ -391,7 +421,7 @@ async def markov_server(ctx, nsfw: bool = False, selected_channel: discord.TextC
                 content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status'][
                     'building_markov'])
             # text_model = POSifiedText(text)
-            text_model = markovify.NewlineText(text, state_size=3)
+            text_model = markovify.NewlineText(text, state_size=config['state_size'])
         except KeyError:
             return ctx.send('Not enough data yet, sorry!')
         await output.edit(
@@ -442,7 +472,7 @@ async def markov(ctx, nsfw: bool = False, selected_channel: discord.TextChannel 
                 content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status'][
                     'building_markov'])
             # text_model = POSifiedText(text)
-            text_model = markovify.NewlineText(text, state_size=3)
+            text_model = markovify.NewlineText(text, state_size=config['state_size'])
         except KeyError:
             return ctx.send('Not enough data yet, sorry!')
 
@@ -580,12 +610,12 @@ async def build_data_profile(members, limit=50000):
     Limit: limit of messages to be imported
     """
     for guild in client.guilds:
-        print("Starting guild {}".format(guild.name))
-        for summer_channel in guild.text_channels:
+        logger.debug("Started scraping guild {}".format(guild.name))
+        for cur_channel in guild.text_channels:
             adding = True
             for group in disabled_groups:
                 try:
-                    if summer_channel.category.name.lower() == group.lower():
+                    if cur_channel.category.name.lower() == group.lower():
                         adding = False
                         break
                 except AttributeError:
@@ -593,8 +623,8 @@ async def build_data_profile(members, limit=50000):
             if adding:
                 counter = 0
                 already_added = 0
-                print("{} scraping for {} users".format(summer_channel.name, len(members)))
-                async for message in summer_channel.history(limit=limit, reverse=True):
+                logger.debug("{} scraping for {} users".format(cur_channel.name, len(members)))
+                async for message in cur_channel.history(limit=limit, reverse=True):
                     if message.author in members:
                         try:
                             cursor.execute(add_message_custom,
@@ -603,15 +633,16 @@ async def build_data_profile(members, limit=50000):
                                             message.content,))
                             counter += 1
                         except mysql.connector.errors.DataError:
-                            print("Couldn't insert, probs a time issue")
+                            logger.warning("Couldn't insert {} - likely a time issue".format(message.id))
                         except mysql.connector.errors.IntegrityError:
                             already_added += 1
-                print("{} scraped for {} users - added {} messages, found {} already added".format(summer_channel.name,
-                                                                                                   len(members),
-                                                                                                   counter,
-                                                                                                   already_added))
+                logger.info(
+                    "{} scraped for {} users - added {} messages, found {} already added".format(cur_channel.name,
+                                                                                                 len(members),
+                                                                                                 counter,
+                                                                                                 already_added))
                 cnx.commit()
-        print("Completed guild {}".format(guild.name))
+        print("Completed updating guild {}".format(guild.name))
 
 
 async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord']['delete_timeout']):

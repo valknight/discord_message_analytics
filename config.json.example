@@ -1,5 +1,5 @@
 {
-  "version": "0.4",
+  "version": "0.5",
   "limit" : 5000,
   "limit_server" : 1000,
   "version_check": true,
@@ -24,12 +24,8 @@
     "charset": "utf8mb4",
     "collation": "utf8mb4_unicode_ci"
   },
-  "web" : {
-    "port": 2929,
-    "debug": false,
-    "host": "0.0.0.0"
-  },
   "language": "english",
   "despacito_enabled" : false,
-  "algorithmia_key": "key_goes_here"
+  "algorithmia_key": "key_goes_here",
+  "state_size": 2
 }
