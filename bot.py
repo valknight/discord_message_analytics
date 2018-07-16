@@ -268,8 +268,12 @@ def opted_in(user=None, user_id=None):
     else:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
         user = user_id
+    try:
+        cursor.execute(get_user, (user,))
+    except mysql.connector.errors.InternalError:
+        cursor.fetchall()
+        cursor.execute(get_user, (user,))
 
-    cursor.execute(get_user, (user,))
     results = cursor.fetchall()
     try:
         if results[0][0] != 1:
