@@ -58,8 +58,7 @@ async def on_ready():
                 await channel.send("Could not create markov for " + user.display_name)
 
 
-
-async def delete_option(bot, message, channel, delete_emoji, timeout=config['discord']['delete_timeout']):
+async def delete_option(bot, message, channel, delete_emoji, timeout=config['discord']['delete_timeout'] / 2):
     """Utility function that allows for you to add a delete option to the end of a command.
     This makes it easier for users to control the output of commands, esp handy for random output ones."""
     await message.add_reaction(delete_emoji)
