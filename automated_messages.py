@@ -33,7 +33,6 @@ async def on_ready():
                 opted_in_users.append(user)
         for user in opted_in_users:
             output = await channel.send("Generating message for " + user.display_name)
-            webhook = await channel.create_webhook(name=user.display_name)
             messages, channels = await get_messages(user.id, config['limit'])
             cnx.commit()
             text_full = ""
@@ -44,13 +43,13 @@ async def on_ready():
                     text_full = text_full + messages[x] + "\n"
             try:
                 text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
-                em = discord.Embed(description=text_model.make_short_sentence(140))
+                em = discord.Embed(title=user.display_name, description=text_model.make_short_sentence(140))
+                em.set_thumbnail(url=user.avatar_url)
                 name = await get_delete_emoji()
                 name = name[0]
                 em.set_footer(text=strings['markov']['output']['footer'].format(name))
                 await output.delete()
-                output = await webhook.send(embed=em, avatar_url=user.avatar_url)
-                await webhook.delete()
+                output = await channel.send(embed=em)
                 time.sleep(1)
                 async for message in channel.history(limit=1, reverse=True):
                     message = message
