@@ -89,7 +89,7 @@ async def on_ready():
     percent_opted_in = int((len(members) * 100) / total_members)
     messages_processed = "SELECT COUNT(*) FROM messages_detailed"
     cursor.execute(messages_processed)
-    amount_full = cursor.fetchone()[0]
+    amount_full = (cursor.fetchall()[0])[0]
     logger.info("Bot running with " + str(
         amount_full) + " messages avaliable fully, and . If this is very low, we cannot guarantee accurate results.")
     logger.info("Initialising building data profiles on existing messages. This will take a while.")
