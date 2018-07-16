@@ -39,6 +39,7 @@
       "errors": {
         "failed_to_generate": "Failed to generate markov chain",
         "not_opted_in": ":exclamation: \n Sorry, you need to be opted in to use GSS experiments. Use ?experiments in #bot_spam to get started.",
+        "low_activity": ":exclamation: \n This channel is not active enough to be properly analysed. Sorry!",
         "nsfw": "{} - You cannot make a NSFW markov in a SFW chat"
       },
       "output": {

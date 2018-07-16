@@ -1,4 +1,3 @@
-#!/usr/bin/python36
 import concurrent
 import datetime
 import json
@@ -22,6 +21,7 @@ def restart():
     logger.info("Restarting. Please wait.")
     os.system(sys.executable + ' bot.py')
 
+
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
@@ -29,22 +29,22 @@ __version__ = "0.5"
 
 if config['version'] != __version__:
     if config['version'] == "0.4":
-        print("Found running 0.4. Running upgrades")
+        logger.warning("Found running 0.4. Running upgrades")
         config['state_size'] = 2
-        print("Added state size to config")
+        logger.debug("Added state size to config")
         config['version'] = "0.5"
-        print("Updated version")
+        logger.debug("Updated version")
         json_to_save = json.dumps(config)
         config_new = open("config.json", "w")
         config_new.write(json_to_save)
         config_new.close()
-        print("Saved new config file. Restarting.")
+        logger.info("Saved new config file.")
         restart()
     if config['version_check']:
-        print(strings['config_invalid'].format(__version__, str(config['version'])))
+        logger.error(strings['config_invalid'].format(__version__, str(config['version'])))
         sys.exit(1)
     else:
-        print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
+        logger.warning(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
 
 disabled_groups = config['discord']['disabled_groups']
 
@@ -187,24 +187,23 @@ async def process_server(ctx):
     """
     Admin command used to record anonymous analytical data.
     """
-    print("Logging")
     for channel in ctx.guild.text_channels:
         # we run through every channel as discord doesn't provide an
         # easy alternative
-        print(str(channel.name) + " is being processed. Please wait.")
+        logger.debug(str(channel.name) + " is being processed. Please wait.")
         async for message in channel.history(limit=None, reverse=True):
             try:
                 cursor.execute(add_message,
                                (int(message.id), str(ctx.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
             except mysql.connector.errors.DataError:
-                print("Couldn't insert, probs a time issue")
+                logger.warning("Couldn't insert {} - likely a time issue".format(message.id))
             except mysql.connector.errors.IntegrityError:
                 pass
         # commit is here, as putting it in for every message causes
         # mysql to nearly slow to a halt with the amount of queries
         cnx.commit()
-        print(str(channel.name) + " has been processed.")
-    print("Done!")
+        logger.info(str(channel.name) + " has been processed.")
+    logger.info("Server {} processing completed".format(str(ctx.guild)))
 
 
 @client.command()
@@ -280,7 +279,7 @@ def opted_in(user=None, user_id=None):
     return results[0][1]
 
 
-async def get_messages(user_id, limit: int):
+async def get_messages(user_id, limit: int, server=False):
     """
     user_id : ID of user you want to get messages for
 
@@ -289,13 +288,22 @@ async def get_messages(user_id, limit: int):
     messages: list of all messages from a user
     channels: list of all channels relevant to messages, in same order
     """
-    get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME DESC LIMIT " + str(
-        int(limit))
-    cursor.execute(get_messages, (user_id,))
+    if server:
+        get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` ORDER BY TIME DESC LIMIT " + str(
+            int(limit))
+        cursor.execute(get_messages)
+    else:
+        get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME DESC LIMIT " + str(
+            int(limit))
+        cursor.execute(get_messages, (user_id,))
+    print(cursor.statement)
     results = cursor.fetchall()
     messages = []
     channels = []
-    blocklist = await get_blocklist(user_id)
+    if server is True:
+        blocklist = []
+    else:
+        blocklist = await get_blocklist(user_id)
     for result in results:
         valid = True
         for word in result[0].split(" "):
@@ -394,28 +402,30 @@ async def markov_embed(title, message):
 
 @client.command(aliases=["m_s"])
 async def markov_server(ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
+    nsfw_mismatch = False
+    if selected_channel is not None:
+        if selected_channel.is_nsfw() and not nsfw:
+            nsfw_mismatch = True
+        elif not selected_channel.is_nsfw() and nsfw:
+            nsfw_mismatch = True
+    if nsfw_mismatch:
+        return await ctx.send(
+            "The selected channel and the NSFW flag do not match. Please ensure these are both correct.")
     """
     Generates markov output based on entire server's messages.
     """
     output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
-
     await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
     async with ctx.channel.typing():
         text = []
-
-        print(selected_channel)
-        for server in client.guilds:
-            for member in server.members:
-                if opted_in(user_id=member.id) is not False:
-                    messages, channels = await get_messages(member.id, config['limit_server'])
-                    text_temp = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
-                    for m in text_temp:
-                        text.append(m)
+        messages, channels = await get_messages(ctx.author.id, config['limit_server'], server=True)
+        text = await build_messages(ctx, nsfw, messages, channels, selected_channel=selected_channel)
 
         text1 = ""
         for m in text:
             text1 += str(m) + "\n"
-
+        if len(text) < 10:
+            return await output.edit(content=output.content + strings['markov']['errors']['low_activity'])
         try:
             await output.edit(
                 content=output.content + strings['emojis']['success'] + "\n" + strings['markov']['status'][
@@ -642,7 +652,7 @@ async def build_data_profile(members, limit=50000):
                                                                                                  counter,
                                                                                                  already_added))
                 cnx.commit()
-        print("Completed updating guild {}".format(guild.name))
+        logger.info("Completed updating guild {}".format(guild.name))
 
 
 async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord']['delete_timeout']):
@@ -780,7 +790,6 @@ async def tagger(ctx, nsfw: bool = False, selected_channel: discord.TextChannel 
         algo = algo_client.algo('nlp/AutoTag/1.0.1')
         await output.delete()
         response = algo.pipe(text1)
-        print(response.result)
         tags = list(response.result)
         tag_str = ""
         for tag in tags:
@@ -839,7 +848,7 @@ if config['despacito_enabled']:
                 voice_c = channel
         try:
             if not ctx.voice_client.is_playing():
-                print()
+                pass
         except AttributeError:
             await voice_c.connect()
         return await ctx.send(';play https://www.youtube.com/watch?v=kJQP7kiw5Fk')
