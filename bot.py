@@ -199,7 +199,6 @@ async def experiments(ctx):
     except mysql.connector.errors.IntegrityError:
         get_user = "SELECT `username` FROM `users` WHERE  `user_id`=%s;"
         cursor.execute(get_user, (author.id,))
-        username = (cursor.fetchall()[0])[0]
 
         opt_in_user = "UPDATE `users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
 
@@ -260,7 +259,8 @@ async def get_messages(user_id, limit: int):
     messages: list of all messages from a user
     channels: list of all channels relevant to messages, in same order
     """
-    get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME DESC LIMIT " + str(int(limit))
+    get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME DESC LIMIT " + str(
+        int(limit))
     cursor.execute(get_messages, (user_id,))
     results = cursor.fetchall()
     messages = []
@@ -597,9 +597,10 @@ async def build_data_profile(members, limit=50000):
                 async for message in summer_channel.history(limit=limit, reverse=True):
                     if message.author in members:
                         try:
-                            cursor.execute(add_message_custom, (int(message.id), message.author.id, str(message.channel.id),
-                                                                message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                                                                message.content,))
+                            cursor.execute(add_message_custom,
+                                           (int(message.id), message.author.id, str(message.channel.id),
+                                            message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                                            message.content,))
                             counter += 1
                         except mysql.connector.errors.DataError:
                             print("Couldn't insert, probs a time issue")
@@ -633,7 +634,7 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
         await message.remove_reaction(delete_emoji, bot.user)
 
 
-async def get_times(user_id):
+async def get_times(user_id=None):
     """
     username : user you want to get messages for
 
@@ -641,9 +642,12 @@ async def get_times(user_id):
 
     times: list of all timestamps of users messages
     """
-
-    get_times = "SELECT `time` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME ASC"
-    cursor.execute(get_times, (user_id,))
+    if user_id is None:
+        get_time = "SELECT `time` FROM `messages_detailed` ORDER BY TIME ASC"
+        cursor.execute(get_time)
+    else:
+        get_time = "SELECT `time` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME ASC"
+        cursor.execute(get_time, (user_id,))
     timesA = cursor.fetchall()
     times = []
     for time in timesA:
@@ -662,14 +666,34 @@ async def nyoom(ctx, user: discord.Member = None):
     if user is None:
         user = ctx.message.author
 
-    output = await ctx.send(strings['nyoom_calc']['status']['calculating'])
+    output = await ctx.send(strings['nyoom_calc']['status']['calculating'] + strings['emojis']['loading'])
     username = opted_in(user_id=user.id)
-    # load interval between messages we're using from the configs
-    interval = config['discord']['nyoom_interval']
     if not username:
         return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
     # grab a list of times that user has posted
-    times = await get_times(user.id)
+    totalM, totalT, nyoom_metric = await calculate_nyoom(output, user_id=user.id)
+    return await output.edit(
+        content=strings['nyoom_calc']['status']['finished'].format(username, totalM, totalT, nyoom_metric))
+
+
+@client.command()
+async def nyoom_server(ctx, user: discord.Member = None):
+    """
+    Calculated the specified users nyoom metric.
+    e.g. The number of messages per hour they post while active (posts within 10mins of each other count as active)
+
+    user : user to get nyoom metric for, if not author
+    """
+    output = await ctx.send(strings['nyoom_calc']['status']['calculating'] + strings['emojis']['loading'])
+    totalM, totalT, nyoom_metric = await calculate_nyoom(output)
+    return await output.edit(
+        content=strings['nyoom_calc']['status']['finished'].format("GSSP", totalM, totalT, nyoom_metric))
+
+
+async def calculate_nyoom(output, user_id=None):
+    # load interval between messages we're using from the configs
+    interval = config['discord']['nyoom_interval']
+    times = await get_times(user_id=user_id)
     # group them into periods of activity
     periods = []
     curPeriod = [times[0], times[0], 0]  # begining of period, end of period, number of messages in period
@@ -684,16 +708,14 @@ async def nyoom(ctx, user: discord.Member = None):
             curPeriod[2] += 1  # add the message to the period
     # sum the total length of activity periods and divide by total number of messages
     totalT = 0
-    totalM = 0
+    totalM = len(times)
+
     for period in periods:
-        totalM += period[2]  # sum all the number of messages [can probs be done with len(times)]
         totalT += ((period[1] - period[
             0]).total_seconds() / 60) + 1  # total number of minutes for the activity period, plus a fudge factor to prevent single message periods from causing a divide by zero issue later
     totalT /= 60  # makes the total active time and nyoom_metric count hours of activity rather than minutes
     nyoom_metric = totalM / totalT  # number of message per minute during periods of activity
-    # print the nyoom metric
-    return await output.edit(
-        content=strings['nyoom_calc']['status']['finished'].format(username, totalM, totalT, nyoom_metric))
+    return totalM, totalT, nyoom_metric
 
 
 @client.command(aliases=["t"])
@@ -738,6 +760,7 @@ async def tagger(ctx, nsfw: bool = False, selected_channel: discord.TextChannel 
     emoji = emoji[1]
     return await delete_option(client, ctx, output, emoji)
 
+
 @client.command()
 async def combine_messages(ctx):
     """
@@ -756,18 +779,19 @@ async def combine_messages(ctx):
     drop = "DROP TABLE `gssp_logging`.`%s`;"
     for user in users:
         try:
-            cursor.execute(query, (opted_in(user_id=user['user_id']), ))
+            cursor.execute(query, (opted_in(user_id=user['user_id']),))
             messages = cursor.fetchall()
-            await ctx.send("Combining "+user['username'])
+            await ctx.send("Combining " + user['username'])
             for message in messages:
                 try:
-                    cursor.execute(insert_query, (message['id'], user['user_id'], message['channel_id'], message['time'], message['contents']))
+                    cursor.execute(insert_query, (
+                        message['id'], user['user_id'], message['channel_id'], message['time'], message['contents']))
                 except:
                     pass
             cnx.commit()
-            await ctx.send("Inserted %s for %s"%(len(messages), user['username']))
+            await ctx.send("Inserted %s for %s" % (len(messages), user['username']))
             try:
-                cursor.execute(drop, (opted_in(user_id=user['user_id']), ))
+                cursor.execute(drop, (opted_in(user_id=user['user_id']),))
             except:
                 pass
         except:
