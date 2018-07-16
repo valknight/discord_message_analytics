@@ -20,8 +20,6 @@ async def on_ready():
             if channel.id == config['discord']['automated_channel']:
                 found = True
                 await channel.send("Channel found!")
-                webhook = await channel.create_webhook(name="Announcer")
-                await webhook.delete()
                 break
         if found:
             break
