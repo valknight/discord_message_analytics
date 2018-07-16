@@ -42,20 +42,24 @@ async def on_ready():
                 channel_temp = client.get_channel(int(channels[x]))
                 if not channel_temp.is_nsfw():
                     text_full = text_full + messages[x] + "\n"
+            try:
+                text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
+                em = discord.Embed(description=text_model.make_short_sentence(140))
+                name = await get_delete_emoji()
+                name = name[0]
+                em.set_footer(text=strings['markov']['output']['footer'].format(name))
+                await output.delete()
+                output = await webhook.send(embed=em, avatar_url=user.avatar_url)
+                await webhook.delete()
+                time.sleep(1)
+                async for message in channel.history(limit=1, reverse=True):
+                    message = message
+                    break
+                await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
+            except KeyError:
+                await output.delete()
+                await channel.send("Could not create markov for " + user.display_name)
 
-            text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
-            em = discord.Embed(description=text_model.make_short_sentence(140))
-            name = await get_delete_emoji()
-            name = name[0]
-            em.set_footer(text=strings['markov']['output']['footer'].format(name))
-            await output.delete()
-            output = await webhook.send(embed=em, avatar_url=user.avatar_url)
-            await webhook.delete()
-            time.sleep(1)
-            async for message in channel.history(limit=1, reverse=True):
-                message = message
-                break
-            await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
 
 
 async def delete_option(bot, message, channel, delete_emoji, timeout=config['discord']['delete_timeout']):
