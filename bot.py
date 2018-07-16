@@ -25,7 +25,10 @@ def restart():
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
 token = config['discord']['token']
-__version__ = "0.5"
+__version__ = "0.5.1"
+
+if config['version'] == "0.5" and __version__ == "0.5.1":
+    config['version'] = "0.5.1"
 
 if config['version'] != __version__:
     if config['version'] == "0.4":
@@ -52,7 +55,7 @@ add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
 add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
 
 cnx = mysql.connector.connect(**config['mysql'])
-cursor = cnx.cursor()
+cursor = cnx.cursor(buffered=True)
 
 opt_in_message = """
 We want to protect your information, and therefore you need to read the following in detail. We keep it brief as a lot of this is important for you to know incase you change your mind in the future.
@@ -96,6 +99,27 @@ async def on_ready():
     await build_data_profile(members, limit=None)
 
 
+def add_message_to_db(message):
+    is_allowed = channel_allowed(
+        message.channel.id, message.channel, message.channel.is_nsfw())
+    if is_allowed:
+        try:
+            while True:
+                result = cursor.fetchone()
+                if result is not None:
+                    print(result + " - < Unread result")
+                else:
+                    break
+            cursor.execute(add_message_custom, (
+                int(message.id), message.author.id, str(message.channel.id),
+                message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                message.content,))
+        except mysql.connector.errors.IntegrityError:
+            pass
+        except mysql.connector.errors.DataError:
+            logger.warning("Couldn't insert {} - likely a time issue".format(message.id))
+
+
 @client.event
 async def on_message(message):
     # this set of code in on_message is used to save incoming new messages
@@ -103,16 +127,7 @@ async def on_message(message):
     user_exp = opted_in(user_id=message.author.id)
 
     if user_exp is not False:
-        is_allowed = channel_allowed(
-            channel.id, message.channel, message.channel.is_nsfw())
-        if is_allowed:
-            try:
-                cursor.execute(add_message_custom, (
-                    int(message.id), message.author.id, str(message.channel.id),
-                    message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    message.content,))
-            except mysql.connector.errors.IntegrityError:
-                pass
+        add_message_to_db(message)
     # this records analytical data - don't adjust this without reading
     # Discord TOS first
     try:
@@ -232,7 +247,7 @@ async def experiments(ctx):
         opt_in_user = "UPDATE `users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
 
         cursor.execute(opt_in_user, (author.id,))
-    await channel.send(strings['data_collection']['data_track_start'])
+    await channel.send(strings['data_collection']['data_track_start'] + " for " + str(ctx.message.author))
 
     await build_data_profile([author])
     await channel.send(strings['data_collection']['complete'].format(author.name))
@@ -268,12 +283,7 @@ def opted_in(user=None, user_id=None):
     else:
         get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `user_id`=%s;"
         user = user_id
-    try:
-        cursor.execute(get_user, (user,))
-    except mysql.connector.errors.InternalError:
-        cursor.fetchall()
-        cursor.execute(get_user, (user,))
-
+    cursor.execute(get_user, (user,))
     results = cursor.fetchall()
     try:
         if results[0][0] != 1:
@@ -639,16 +649,7 @@ async def build_data_profile(members, limit=50000):
                 logger.debug("{} scraping for {} users".format(cur_channel.name, len(members)))
                 async for message in cur_channel.history(limit=limit, reverse=True):
                     if message.author in members:
-                        try:
-                            cursor.execute(add_message_custom,
-                                           (int(message.id), message.author.id, str(message.channel.id),
-                                            message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                                            message.content,))
-                            counter += 1
-                        except mysql.connector.errors.DataError:
-                            logger.warning("Couldn't insert {} - likely a time issue".format(message.id))
-                        except mysql.connector.errors.IntegrityError:
-                            already_added += 1
+                        add_message_to_db(message)
                 logger.info(
                     "{} scraped for {} users - added {} messages, found {} already added".format(cur_channel.name,
                                                                                                  len(members),
