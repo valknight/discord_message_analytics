@@ -296,7 +296,6 @@ async def get_messages(user_id, limit: int, server=False):
         get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME DESC LIMIT " + str(
             int(limit))
         cursor.execute(get_messages, (user_id,))
-    print(cursor.statement)
     results = cursor.fetchall()
     messages = []
     channels = []
