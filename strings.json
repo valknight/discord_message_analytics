@@ -89,8 +89,6 @@
     "data_collection": {
       "opt_in_title": "Welcome to GSSP experiments! :atom:",
       "opt_in_footer": "To proceed, please run this command again.",
-      "created_record": "Created your record as `{}`. Your data is now being processed (don't worry about whether it's done or not - after about 10 minutes we should have enough data for markov chains to work reliably-ish, if you post here a lot)",
-      "update_record": "Your record already exists as `{}` - we're now going to update it. We'll keep you updated on progress",
       "data_track_start": "Initialising data tracking",
       "complete": "Finished building {}'s entry! Data analysis can now be ran. If you wish to update your data record at any time, just simply run this command again!"
     }

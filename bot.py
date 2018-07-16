@@ -26,7 +26,7 @@ if config['version'] != __version__:
 disabled_groups = config['discord']['disabled_groups']
 
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-add_message_custom = "INSERT INTO `%s` (id, channel_id, time, contents) VALUES (%s, %s, %s, %s)"
+add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
 
 cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor()
@@ -78,7 +78,7 @@ async def on_message(message):
         if is_allowed:
             try:
                 cursor.execute(add_message_custom, (
-                    user_exp, int(message.id), str(message.channel.id),
+                    int(message.id), message.author.id, str(message.channel.id),
                     message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     message.content,))
             except mysql.connector.errors.IntegrityError:
@@ -204,22 +204,6 @@ async def experiments(ctx):
         opt_in_user = "UPDATE `users` SET `opted_in`=b'1' WHERE  `user_id`=%s;"
 
         cursor.execute(opt_in_user, (author.id,))
-        create_table = """
-        CREATE TABLE `%s` (
-            `id` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `channel_id` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-            `time` timestamp NULL DEFAULT NULL,
-            `contents` longtext COLLATE utf8mb4_unicode_ci,
-            PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        """
-
-        try:
-            cursor.execute(create_table, (username,))
-            await channel.send(strings['data_collection']['created_record'].format(username))
-        except mysql.connector.errors.ProgrammingError:
-            await channel.send(strings['data_collection']['update_record'].format(username))
-
     await channel.send(strings['data_collection']['data_track_start'])
 
     await build_data_profile([author])
@@ -276,9 +260,8 @@ async def get_messages(user_id, limit: int):
     messages: list of all messages from a user
     channels: list of all channels relevant to messages, in same order
     """
-    username = opted_in(user_id=user_id)
-    get_messages = "SELECT `contents`, `channel_id` FROM `%s` ORDER BY TIME DESC LIMIT " + str(int(limit))
-    cursor.execute(get_messages, (username,))
+    get_messages = "SELECT `contents`, `channel_id` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME DESC LIMIT " + str(int(limit))
+    cursor.execute(get_messages, (user_id,))
     results = cursor.fetchall()
     messages = []
     channels = []
@@ -613,9 +596,8 @@ async def build_data_profile(members, limit=50000):
                 print("{} scraping for {} users".format(summer_channel.name, len(members)))
                 async for message in summer_channel.history(limit=limit, reverse=True):
                     if message.author in members:
-                        name = opted_in(user_id=message.author.id)
                         try:
-                            cursor.execute(add_message_custom, (name, int(message.id), str(message.channel.id),
+                            cursor.execute(add_message_custom, (int(message.id), message.author.id, str(message.channel.id),
                                                                 message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                                                                 message.content,))
                             counter += 1
@@ -651,7 +633,7 @@ async def delete_option(bot, ctx, message, delete_emoji, timeout=config['discord
         await message.remove_reaction(delete_emoji, bot.user)
 
 
-async def get_times(username):
+async def get_times(user_id):
     """
     username : user you want to get messages for
 
@@ -660,8 +642,8 @@ async def get_times(username):
     times: list of all timestamps of users messages
     """
 
-    get_times = "SELECT `time` FROM `%s` ORDER BY TIME ASC"
-    cursor.execute(get_times, (username,))
+    get_times = "SELECT `time` FROM `messages_detailed` WHERE `user_id` = %s ORDER BY TIME ASC"
+    cursor.execute(get_times, (user_id,))
     timesA = cursor.fetchall()
     times = []
     for time in timesA:
@@ -687,7 +669,7 @@ async def nyoom(ctx, user: discord.Member = None):
     if not username:
         return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
     # grab a list of times that user has posted
-    times = await get_times(username)
+    times = await get_times(user.id)
     # group them into periods of activity
     periods = []
     curPeriod = [times[0], times[0], 0]  # begining of period, end of period, number of messages in period
@@ -755,6 +737,43 @@ async def tagger(ctx, nsfw: bool = False, selected_channel: discord.TextChannel 
     emoji = await get_delete_emoji()
     emoji = emoji[1]
     return await delete_option(client, ctx, output, emoji)
+
+@client.command()
+async def combine_messages(ctx):
+    """
+    This is used for migrating to the new system of tracking.
+
+    """
+    cnx = mysql.connector.connect(**config['mysql'])
+    cursor = cnx.cursor(dictionary=True)
+    table_name = opted_in(user_id=ctx.author.id)
+
+    query_users = "SELECT user_id, username FROM `gssp_logging`.`users` WHERE opted_in = 1"
+    cursor.execute(query_users)
+    users = cursor.fetchall()
+    insert_query = "INSERT INTO `gssp_logging`.`messages_detailed` (`id`, `user_id`, `channel_id`, `time`, `contents`) VALUES (%s, %s, %s, %s, %s);"
+    query = "SELECT * FROM `%s`"
+    drop = "DROP TABLE `gssp_logging`.`%s`;"
+    for user in users:
+        try:
+            cursor.execute(query, (opted_in(user_id=user['user_id']), ))
+            messages = cursor.fetchall()
+            await ctx.send("Combining "+user['username'])
+            for message in messages:
+                try:
+                    cursor.execute(insert_query, (message['id'], user['user_id'], message['channel_id'], message['time'], message['contents']))
+                except:
+                    pass
+            cnx.commit()
+            await ctx.send("Inserted %s for %s"%(len(messages), user['username']))
+            try:
+                cursor.execute(drop, (opted_in(user_id=user['user_id']), ))
+            except:
+                pass
+        except:
+            pass
+        cnx.commit()
+    return await ctx.send("Done!")
 
 
 if config['despacito_enabled']:

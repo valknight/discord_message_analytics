@@ -41,6 +41,16 @@ CREATE TABLE `messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 """
 
+messages_detailed = """
+CREATE TABLE `messages_detailed` (
+  `id` varchar(64) NOT NULL,
+  `user_id` varchar(64) NOT NULL,
+  `channel_id` varchar(64) DEFAULT NULL,
+  `time` timestamp NULL DEFAULT NULL,
+  `contents` longtext DEFAULT NULL,
+  PRIMARY KEY (`id`,`user_id`),
+  KEY `idx_time` (`time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
 markovs = """
 CREATE TABLE `markovs` (
   `user` varchar(64) NOT NULL,
@@ -76,6 +86,8 @@ def make_table(query):
 print("\nCreating users table")
 make_table(users)
 print("\nCreating messages table")
+make_table(messages)
+print("\nCreating detailed messages table")
 make_table(messages)
 print("\nCreating markovs table")
 make_table(markovs)
