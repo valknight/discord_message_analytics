@@ -472,7 +472,7 @@ async def markov(ctx, nsfw: bool = False, selected_channel: discord.TextChannel 
 
 @commands.is_owner()
 @client.command()
-async def send_emoji(ctx, name, id):
+async def send_emoji(ctx, name, emoji_id):
     await ctx.message.delete()
     await ctx.send(strings['emojis']['animated_emoji_template'].format(name, int(id)))
 
@@ -786,7 +786,7 @@ if config['despacito_enabled']:
             if not ctx.voice_client.is_playing():
                 print()
         except AttributeError:
-            vc = await voice_c.connect()
+            await voice_c.connect()
         return await ctx.send(';play https://www.youtube.com/watch?v=kJQP7kiw5Fk')
 if __name__ == "__main__":
     client.run(token)
