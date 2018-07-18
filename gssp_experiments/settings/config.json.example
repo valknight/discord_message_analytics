@@ -4,6 +4,7 @@
   "limit_server" : 1000,
   "version_check": true,
   "discord": {
+    "warning_channel": channel_id,
     "nyoom_interval" : 60,
     "prompt_command_exist": true,
     "delete_timeout": 60,

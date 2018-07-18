@@ -3,12 +3,10 @@ import json
 import sys
 
 import discord
-import mysql.connector
 from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.cogs.admin import add_message
-from gssp_experiments.database import cnx, cursor
+from gssp_experiments.database import cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
@@ -66,24 +64,7 @@ async def on_ready():
 @client.event
 async def on_message(message):
     # this set of code in on_message is used to save incoming new messages
-    user_exp = database_tools.opted_in(user_id=message.author.id)
-
-    if user_exp is not False:
-        database_tools.add_message_to_db(message)
-    # this records analytical data - don't adjust this without reading
-    # Discord TOS first
-    try:
-        cursor.execute(add_message,
-                       (int(message.id), str(message.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
-        cnx.commit()
-    except mysql.connector.errors.IntegrityError:
-        pass
-    try:
-        if message.content[len(config['discord']['prefix'])] == config['discord'][
-            'prefix']:  # if its double(or more) prefixed then it cant be a command (?word is a command, ????? is not)
-            return
-    except IndexError:
-        return
+    await client_tools.process_message(message)
     return await client.process_commands(message)
 
 

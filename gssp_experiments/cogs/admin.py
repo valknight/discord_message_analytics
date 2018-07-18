@@ -5,17 +5,17 @@ import discord
 import mysql
 from discord.ext import commands
 
-from gssp_experiments.client_tools import ClientTools
+from gssp_experiments.checks import is_owner_or_admin
+from gssp_experiments.client_tools import ClientTools, add_message
 from gssp_experiments.colours import red, green
 from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
-add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
 startup_extensions = [
     "gssp_experiments.cogs.controls",
     "gssp_experiments.cogs.markov",
+    "gssp_experiments.cogs.slurs",
     "gssp_experiments.cogs.nyoom",
     "gssp_experiments.cogs.tagger",
     "gssp_experiments.cogs.fun"
@@ -61,7 +61,7 @@ class Admin():
 
         reload_text = "Reloading {}"
         startup_extensions_temp = startup_extensions
-        startup_extensions_temp.append("gssp_experiments.cogs.admin")
+        startup_extensions_temp.insert(0, "gssp_experiments.cogs.admin")
 
         em = discord.Embed(title="Reloading - please wait", color=red)
         await output.edit(embed=em)
@@ -98,7 +98,7 @@ class Admin():
             print(str(channel.name) + " has been processed.")
         print("Server {} processing completed".format(str(ctx.guild)))
 
-    @commands.is_owner()
+    @is_owner_or_admin()
     @commands.command()
     async def is_processed(self, ctx, user=None):
         """
