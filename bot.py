@@ -10,8 +10,9 @@ import mysql.connector
 from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
+from gssp_experiments.cogs.admin import add_message
 from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.tools import DatabaseTools
+from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
 logging.basicConfig(level=logging.INFO)
@@ -54,25 +55,10 @@ if config['version'] != __version__:
 
 disabled_groups = config['discord']['disabled_groups']
 
-add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
-startup_extensions = [
-    "gssp_experiments.cogs.controls",
-    "gssp_experiments.cogs.markov",
-    "gssp_experiments.cogs.nyoom",
-    "gssp_experiments.cogs.tagger",
-    "gssp_experiments.cogs.fun"
-]
-
 
 @client.event
 async def on_ready():
-    for extension in startup_extensions:
-        try:
-            client.load_extension(extension)
-        except Exception as e:
-            exc = '{}: {}'.format(type(e).__name__, e)
-            print('Failed to load extension {}\n{}'.format(extension, exc))
+    client.load_extension("gssp_experiments.cogs.admin")
     log_in_message = """
 
 [Connected to Discord]
@@ -168,102 +154,6 @@ async def on_command_error(ctx, error):
         if embed:
             embed.colour = 0x4c0000
             await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
-
-
-@commands.is_owner()
-@client.command()
-async def process_server(ctx):
-    """
-    Admin command used to record anonymous analytical data.
-    """
-    for channel in ctx.guild.text_channels:
-        # we run through every channel as discord doesn't provide an
-        # easy alternative
-        logger.debug(str(channel.name) + " is being processed. Please wait.")
-        async for message in channel.history(limit=None, reverse=True):
-            try:
-                cursor.execute(add_message,
-                               (int(message.id), str(ctx.channel.id), message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
-            except mysql.connector.errors.DataError:
-                logger.warning("Couldn't insert {} - likely a time issue".format(message.id))
-            except mysql.connector.errors.IntegrityError:
-                pass
-        # commit is here, as putting it in for every message causes
-        # mysql to nearly slow to a halt with the amount of queries
-        cnx.commit()
-        logger.info(str(channel.name) + " has been processed.")
-    logger.info("Server {} processing completed".format(str(ctx.guild)))
-
-
-@commands.is_owner()
-@client.command()
-async def is_processed(ctx, user=None):
-    """
-    Admin command used to check if a member has opted in
-    """
-    if user is None:
-        user = ctx.author.name
-
-    await ctx.send(strings['process_check']['status']['checking'])
-    if not database_tools.opted_in(user=user):
-        return await ctx.send(strings['process_check']['status']['not_opted_in'])
-    await ctx.send(strings['process_check']['status']['opted_in'])
-    return
-
-
-@client.command()
-async def combine_messages(ctx):
-    """
-    This is used for migrating to the new system of tracking.
-
-    """
-    cnx = mysql.connector.connect(**config['mysql'])
-    cursor = cnx.cursor(dictionary=True)
-    table_name = database_tools.opted_in(user_id=ctx.author.id)
-
-    query_users = "SELECT user_id, username FROM `gssp_logging`.`users` WHERE opted_in = 1"
-    cursor.execute(query_users)
-    users = cursor.fetchall()
-    insert_query = "INSERT INTO `gssp_logging`.`messages_detailed` (`id`, `user_id`, `channel_id`, `time`, `contents`) VALUES (%s, %s, %s, %s, %s);"
-    query = "SELECT * FROM `%s`"
-    drop = "DROP TABLE `gssp_logging`.`%s`;"
-    for user in users:
-        try:
-            cursor.execute(query, (database_tools.opted_in(user_id=user['user_id']),))
-            messages = cursor.fetchall()
-            await ctx.send("Combining " + user['username'])
-            for message in messages:
-                try:
-                    cursor.execute(insert_query, (
-                        message['id'], user['user_id'], message['channel_id'], message['time'], message['contents']))
-                except:
-                    pass
-            cnx.commit()
-            await ctx.send("Inserted %s for %s" % (len(messages), user['username']))
-            try:
-                cursor.execute(drop, (database_tools.opted_in(user_id=user['user_id']),))
-            except:
-                pass
-        except:
-            pass
-        cnx.commit()
-    return await ctx.send("Done!")
-
-
-@commands.is_owner()
-@client.command()
-async def unload(extension_name: str):
-    """Unloads an extension."""
-    client.unload_extension(extension_name)
-    await client.say("{} unloaded.".format(extension_name))
-
-
-@commands.is_owner
-@client.command()
-async def load(extension_name: str):
-    """Loads an extension. """
-    client.load_extension(extension_name)
-    await client.say("{} loaded.".format(extension_name))
 
 
 if __name__ == "__main__":

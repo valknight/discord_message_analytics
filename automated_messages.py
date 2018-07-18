@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from bot import cnx
 from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.database.tools import DatabaseTools
+from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
 client = commands.Bot(command_prefix="--------------------", owner_id=config['discord']['owner_id'])

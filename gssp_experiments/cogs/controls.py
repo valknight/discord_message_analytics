@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cursor, cnx
-from gssp_experiments.database.tools import DatabaseTools
+from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import strings, config
 
 opt_in_message = """
@@ -62,7 +62,7 @@ class Controls():
     @commands.command()
     async def automated(self, ctx):
         """
-        Opt in / out of automated messages
+        Opt in to automated messages. Run this again to opt out.
         """
         if self.database_tools.is_automated(ctx.author):
             output = await ctx.channel.send("Opting you out of automation.")

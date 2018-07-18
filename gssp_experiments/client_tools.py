@@ -2,7 +2,7 @@ import concurrent
 
 import discord
 
-from gssp_experiments.database.tools import DatabaseTools
+from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
 disabled_groups = config['discord']['disabled_groups']
