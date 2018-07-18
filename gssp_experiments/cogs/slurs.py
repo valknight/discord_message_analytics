@@ -29,7 +29,7 @@ class Slurs():
         await ctx.message.delete()
         file = open("gssp_experiments/data/bad_words.json", 'r')
         slurs = json.loads(file.read())
-        slurs.append(slur)
+        slurs.append(slur.lower())
         file.close()
         file = open("gssp_experiments/data/bad_words.json", 'w')
         file.write(json.dumps(slurs))
@@ -43,8 +43,8 @@ class Slurs():
         await ctx.message.delete()
         file = open("gssp_experiments/data/bad_words.json", 'r')
         slurs = json.loads(file.read())
-        if slur in slurs:
-            slurs.remove(slur)
+        if slur.lower() in slurs:
+            slurs.remove(slur.lower())
         else:
             return ctx.channel.send(embed=discord.Embed(title="Slur does not exist", color=red))
         slur_json = json.dumps(slurs)
