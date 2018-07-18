@@ -9,7 +9,7 @@ def is_owner_or_admin():
             return True
         else:
             for role in ctx.author.roles:
-                if role.id in config['discord']["admin_roles"]:
+                if str(role.id) in config['discord']["admin_roles"]:
                     return True
         return False
 
