@@ -167,12 +167,14 @@ class ClientTools():
             embed = discord.Embed(title="Potential usage of slur detected", color=colours.dark_red)
 
             embed.add_field(name="Slur(s)", value=str(matches))
+            embed.add_field(name="Message", value=str(message.content))
             embed.add_field(name="Author", value=str(message.author))
             embed.add_field(name="Author ID", value=str(message.author.id))
             embed.add_field(name="Channel", value=str(message.channel))
             embed.add_field(name="Time", value=str(message.created_at))
             embed.add_field(name="Message ID", value=str(message.id))
-            embed.add_field(name="Guild ID", value=str(message.channel.guild))
-            embed.add_field(name="Guild", value=str(message.channel))
+            embed.add_field(name="Guild ID", value=str(message.channel.guild.id))
+            embed.add_field(name="Guild", value=str(message.channel.guild))
+
             channel = self.client.get_channel(config['discord']['warning_channel'])
             await channel.send(embed=embed)
