@@ -1,0 +1,32 @@
+{
+  "version": "0.6",
+  "limit" : 5000,
+  "limit_server" : 1000,
+  "version_check": true,
+  "discord": {
+    "nyoom_interval" : 60,
+    "prompt_command_exist": true,
+    "delete_timeout": 60,
+    "owner_id": 0123456789,
+    "token": "insert_your_token_here",
+    "prefix": "?",
+    "disabled_groups": [
+      "Channel Group 1",
+      "Channel Group 2",
+      "Channel Group 3"
+    ],
+    "automated_channel": 468465400733237249
+  },
+  "mysql": {
+    "user": "mysql_username",
+    "password": "mysql_password",
+    "host": "mysql_hostname",
+    "database": "mysql_scheme",
+    "charset": "utf8mb4",
+    "collation": "utf8mb4_unicode_ci"
+  },
+  "language": "english",
+  "despacito_enabled" : false,
+  "algorithmia_key": "key_goes_here",
+  "state_size": 2
+}
