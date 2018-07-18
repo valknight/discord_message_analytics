@@ -250,5 +250,21 @@ async def combine_messages(ctx):
     return await ctx.send("Done!")
 
 
+@commands.is_owner()
+@client.command()
+async def unload(extension_name: str):
+    """Unloads an extension."""
+    client.unload_extension(extension_name)
+    await client.say("{} unloaded.".format(extension_name))
+
+
+@commands.is_owner
+@client.command()
+async def load(extension_name: str):
+    """Loads an extension. """
+    client.load_extension(extension_name)
+    await client.say("{} loaded.".format(extension_name))
+
+
 if __name__ == "__main__":
     client.run(token)
