@@ -2,12 +2,10 @@ import concurrent
 import time
 
 import discord
-import discord.errors
 import markovify
 from discord.ext import commands
 
 from bot import cnx, get_messages, get_delete_emoji, delete_option, is_automated
-from bot import logger
 from config import config, strings
 
 client = commands.Bot(command_prefix="--------------------", owner_id=config['discord']['owner_id'])
@@ -16,68 +14,48 @@ client = commands.Bot(command_prefix="--------------------", owner_id=config['di
 @client.event
 async def on_ready():
     print("Connected.")
-    global disconnected
-    disconnected = True
-    attempts = 0
-    while True:
-        try:
-            await general_bot(attempts)
-            attempts = 0
-        except discord.errors.HTTPException:
-            disconnected = True
-            logger.info("Failed to connect - Waiting 10 seconds, then reconnecting")
-            attempts += 1
-            time.sleep(10)
-
-
-async def general_bot(attempts):
-    global disconnected
     found = False
     for server in client.guilds:
         for channel in server.channels:
             if channel.id == config['discord']['automated_channel']:
                 found = True
-                if disconnected:
-                    output = await channel.send("Connected to Discord - took " + str(attempts + 1) + " attempt(s)")
-                else:
-                    output = await channel.send("Checking for new users - this will take a second")
+                await channel.send("Channel found!")
                 break
         if found:
             break
 
-    opted_in_users = []
-    for user in server.members:
-        if is_automated(user):
-            opted_in_users.append(user)
-    await output.edit(content=str(len(opted_in_users)) + " out of " + str(
-        len(server.members)) + " members are opted in. Unleash the hounds!")
-    for user in opted_in_users:
-        output = await channel.send("Generating message for " + user.display_name)
-        messages, channels = await get_messages(user.id, config['limit'])
-        cnx.commit()
-        text_full = ""
+    while True:
+        opted_in_users = []
+        for user in server.members:
+            if is_automated(user):
+                opted_in_users.append(user)
+        for user in opted_in_users:
+            output = await channel.send("Generating message for " + user.display_name)
+            messages, channels = await get_messages(user.id, config['limit'])
+            cnx.commit()
+            text_full = ""
 
-        for x in range(0, len(messages)):
-            channel_temp = client.get_channel(int(channels[x]))
-            if not channel_temp.is_nsfw():
-                text_full = text_full + messages[x] + "\n"
-        try:
-            text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
-            em = discord.Embed(title=user.display_name, description=text_model.make_short_sentence(140))
-            em.set_thumbnail(url=user.avatar_url)
-            name = await get_delete_emoji()
-            name = name[0]
-            em.set_footer(text=strings['markov']['output']['footer'].format(name))
-            await output.delete()
-            output = await channel.send(embed=em)
-            time.sleep(1)
-            async for message in channel.history(limit=1, reverse=True):
-                message = message
-                break
-            await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
-        except KeyError:
-            await output.delete()
-            await channel.send("Could not create markov for " + user.display_name)
+            for x in range(0, len(messages)):
+                channel_temp = client.get_channel(int(channels[x]))
+                if not channel_temp.is_nsfw():
+                    text_full = text_full + messages[x] + "\n"
+            try:
+                text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
+                em = discord.Embed(title=user.display_name, description=text_model.make_short_sentence(140))
+                em.set_thumbnail(url=user.avatar_url)
+                name = await get_delete_emoji()
+                name = name[0]
+                em.set_footer(text=strings['markov']['output']['footer'].format(name))
+                await output.delete()
+                output = await channel.send(embed=em)
+                time.sleep(1)
+                async for message in channel.history(limit=1, reverse=True):
+                    message = message
+                    break
+                await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
+            except KeyError:
+                await output.delete()
+                await channel.send("Could not create markov for " + user.display_name)
 
 
 async def delete_option(bot, message, channel, delete_emoji, timeout=config['discord']['delete_timeout'] / 2):
