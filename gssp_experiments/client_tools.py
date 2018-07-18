@@ -161,7 +161,7 @@ class ClientTools():
         file = open("gssp_experiments/data/bad_words.json")
         slurs = json.loads(file.read())
         for slur in slurs:
-            if slur != "" and slur in message.content:
+            if slur.lower() != "" and slur in message.content.lower():
                 matches.append(slur)
         if len(matches) > 0:
             embed = discord.Embed(title="Potential usage of slur detected", color=colours.dark_red)
