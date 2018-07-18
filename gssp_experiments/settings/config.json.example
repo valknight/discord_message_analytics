@@ -16,7 +16,8 @@
       "Channel Group 2",
       "Channel Group 3"
     ],
-    "automated_channel": 468465400733237249
+    "automated_channel": 468465400733237249,
+    "admin_roles": ["role_id"]
   },
   "mysql": {
     "user": "mysql_username",
