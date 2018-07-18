@@ -1,8 +1,8 @@
 import concurrent
-import time
 
 import discord
 import markovify
+import time
 from discord.ext import commands
 
 from bot import cnx
@@ -17,7 +17,7 @@ database_tools = DatabaseTools(client)
 
 @client.event
 async def on_ready():
-    print("Connected.")
+    print("[ Automated bot connected. ]")
     found = False
     for server in client.guilds:
         for channel in server.channels:

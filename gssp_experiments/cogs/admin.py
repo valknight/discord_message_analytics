@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 import discord
 import mysql
 from discord.ext import commands
@@ -22,6 +25,7 @@ startup_extensions = [
 class Admin():
 
     def __init__(self, client):
+        self.automated = subprocess.Popen([sys.executable, "automated_messages.py"])
         self.client = client
         self.database_tools = DatabaseTools(client)
         self.client_tools = ClientTools(client)
@@ -50,15 +54,22 @@ class Admin():
     @commands.command()
     async def reload(self, ctx):
         """Reload all existing cogs"""
+
+        em = discord.Embed(title="Killing automated bot", color=red)
+        output = await ctx.channel.send(embed=em)
+        self.automated.kill()
+
         reload_text = "Reloading {}"
         startup_extensions_temp = startup_extensions
         startup_extensions_temp.append("gssp_experiments.cogs.admin")
 
         em = discord.Embed(title="Reloading - please wait", color=red)
-        output = await ctx.channel.send(embed=em)
+        await output.edit(embed=em)
+
         for cog in startup_extensions_temp:
             self.client.unload_extension(cog)
             self.client.load_extension(cog)
+
         em = discord.Embed(title="Finished!", colour=green)
         await output.edit(embed=em)
 

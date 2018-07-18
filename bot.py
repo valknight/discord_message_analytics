@@ -1,8 +1,6 @@
 import datetime
 import json
-import logging
 import os
-import subprocess
 import sys
 
 import discord
@@ -15,12 +13,9 @@ from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 def restart():
-    logger.info("Restarting. Please wait.")
+    print("Restarting. Please wait.")
     os.system(sys.executable + ' bot.py')
 
 
@@ -36,54 +31,41 @@ if config['version'] == "0.5" and __version__ == "0.5.1":
 
 if config['version'] != __version__:
     if config['version'] == "0.4":
-        logger.warning("Found running 0.4. Running upgrades")
+        print("Found running 0.4. Running upgrades")
         config['state_size'] = 2
-        logger.debug("Added state size to config")
+        print("Added state size to config")
         config['version'] = "0.5"
-        logger.debug("Updated version")
+        print("Updated version")
         json_to_save = json.dumps(config)
         config_new = open("config.json", "w")
         config_new.write(json_to_save)
         config_new.close()
-        logger.info("Saved new config file.")
+        print("Saved new config file.")
         restart()
     if config['version_check']:
-        logger.error(strings['config_invalid'].format(__version__, str(config['version'])))
+        print(strings['config_invalid'].format(__version__, str(config['version'])))
         sys.exit(1)
     else:
-        logger.warning(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
-
-disabled_groups = config['discord']['disabled_groups']
+        print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
 
 
 @client.event
 async def on_ready():
     client.load_extension("gssp_experiments.cogs.admin")
-    log_in_message = """
-
-[Connected to Discord]
-[Username]  -   [ {} ]
-[User  ID]  -   [ {} ]
-
-"""
-    logger.info(log_in_message.format(client.user.name, client.user.id))
-
-    subprocess.Popen([sys.executable, "automated_messages.py"])
-    logger.info("Started automated messages sub-process")
+    print("[Connected to Discord]\n[Username]  -   [ {} ]\n[User  ID]  -   [ {} ]".format(client.user.name,
+                                                                                          client.user.id))
     members = []
-    total_members = 0
     for server in client.guilds:
         for member in server.members:
             name = database_tools.opted_in(user_id=member.id)
-            total_members += 1
             if name is not False:
                 members.append(member)
     messages_processed = "SELECT COUNT(*) FROM messages_detailed"
     cursor.execute(messages_processed)
     amount_full = (cursor.fetchall()[0])[0]
-    logger.info("Bot running with " + str(
+    print("Bot running with " + str(
         amount_full) + " messages avaliable fully, and . If this is very low, we cannot guarantee accurate results.")
-    logger.info("Initialising building data profiles on existing messages. This will take a while.")
+    print("Initialising building data profiles on existing messages. This will take a while.")
     await client_tools.build_data_profile(members, limit=None)
 
 
