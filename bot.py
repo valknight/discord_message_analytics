@@ -1,6 +1,5 @@
 import datetime
 import json
-import os
 import sys
 
 import discord
@@ -12,12 +11,6 @@ from gssp_experiments.cogs.admin import add_message
 from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
-
-
-def restart():
-    print("Restarting. Please wait.")
-    os.system(sys.executable + ' bot.py')
-
 
 client = commands.Bot(command_prefix=config['discord']['prefix'], owner_id=config['discord']['owner_id'])
 
@@ -41,7 +34,8 @@ if config['version'] != __version__:
         config_new.write(json_to_save)
         config_new.close()
         print("Saved new config file.")
-        restart()
+        print("Please run the bot again")
+        sys.exit(0)
     if config['version_check']:
         print(strings['config_invalid'].format(__version__, str(config['version'])))
         sys.exit(1)
@@ -72,7 +66,6 @@ async def on_ready():
 @client.event
 async def on_message(message):
     # this set of code in on_message is used to save incoming new messages
-    channel = message.channel
     user_exp = database_tools.opted_in(user_id=message.author.id)
 
     if user_exp is not False:
