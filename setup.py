@@ -1,6 +1,7 @@
-import mysql.connector
 import json
 import os
+
+import mysql.connector
 
 discordpy_command = "python3 -m pip install -U https://github.com/Rapptz/discord.py/archive/rewrite.zip#egg=discord.py"
 requirements = "python3 -m pip install -r requirements.txt"
@@ -44,11 +45,11 @@ CREATE TABLE `messages` (
 messages_detailed = """
 CREATE TABLE `messages_detailed` (
   `id` varchar(64) NOT NULL,
-  `user_id` varchar(64) NOT NULL,
+  `user_id` varchar(64) CHARACTER SET utf8 NOT NULL,
   `channel_id` varchar(64) DEFAULT NULL,
   `time` timestamp NULL DEFAULT NULL,
   `contents` longtext DEFAULT NULL,
-  PRIMARY KEY (`id`,`user_id`),
+  PRIMARY KEY (`id`),
   KEY `idx_time` (`time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"""
 markovs = """
@@ -77,11 +78,14 @@ CREATE TABLE `apikeys` (
   UNIQUE KEY `key` (`key`)
 ) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8
 """
+
+
 def make_table(query):
   try:
     cursor.execute(query)
   except mysql.connector.errors.ProgrammingError:
     print("Already exists")
+
 
 print("\nCreating users table")
 make_table(users)

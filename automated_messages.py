@@ -5,10 +5,14 @@ import discord
 import markovify
 from discord.ext import commands
 
-from bot import cnx, get_messages, get_delete_emoji, delete_option, is_automated
-from config import config, strings
+from bot import cnx
+from gssp_experiments.client_tools import ClientTools
+from gssp_experiments.database.tools import DatabaseTools
+from gssp_experiments.settings.config import config, strings
 
 client = commands.Bot(command_prefix="--------------------", owner_id=config['discord']['owner_id'])
+client_tools = ClientTools(client)
+database_tools = DatabaseTools(client)
 
 
 @client.event
@@ -27,11 +31,11 @@ async def on_ready():
     while True:
         opted_in_users = []
         for user in server.members:
-            if is_automated(user):
+            if database_tools.is_automated(user):
                 opted_in_users.append(user)
         for user in opted_in_users:
             output = await channel.send("Generating message for " + user.display_name)
-            messages, channels = await get_messages(user.id, config['limit'])
+            messages, channels = await database_tools.get_messages(user.id, config['limit'])
             cnx.commit()
             text_full = ""
 
@@ -43,7 +47,7 @@ async def on_ready():
                 text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
                 em = discord.Embed(title=user.display_name, description=text_model.make_short_sentence(140))
                 em.set_thumbnail(url=user.avatar_url)
-                name = await get_delete_emoji()
+                name = await client_tools.get_delete_emoji()
                 name = name[0]
                 em.set_footer(text=strings['markov']['output']['footer'].format(name))
                 await output.delete()
@@ -72,7 +76,10 @@ async def delete_option(bot, message, channel, delete_emoji, timeout=config['dis
         await message.delete()
         return await channel.send("Message deleted.")
     except concurrent.futures._base.TimeoutError:
-        await message.remove_reaction(delete_emoji, bot.user)
+        try:
+            await message.remove_reaction(delete_emoji, bot.user)
+        except discord.errors.NotFound:
+            pass
 
 
 if __name__ == "__main__":
