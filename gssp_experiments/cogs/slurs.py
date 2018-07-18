@@ -46,7 +46,7 @@ class Slurs():
         if slur.lower() in slurs:
             slurs.remove(slur.lower())
         else:
-            return ctx.channel.send(embed=discord.Embed(title="Slur does not exist", color=red))
+            return await ctx.channel.send(embed=discord.Embed(title="Slur does not exist", color=red))
         slur_json = json.dumps(slurs)
         file.close()
         file = open("gssp_experiments/data/bad_words.json", "w")
