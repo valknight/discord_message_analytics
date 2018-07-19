@@ -1,5 +1,5 @@
 {
-  "version": "0.8",
+  "version": "0.8.1",
   "limit" : 5000,
   "limit_server" : 1000,
   "version_check": true,

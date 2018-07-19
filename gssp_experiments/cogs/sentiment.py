@@ -17,10 +17,11 @@ class Sentiment():
         self.database_extras = DatabaseTools(self.client_extras)
 
     @commands.command(aliases=["s"])
-    async def sentiment(self, ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
+    async def sentiment(self, ctx, raw: bool = False, nsfw: bool = False, selected_channel: discord.TextChannel = None):
         """
         Calculate sentiment.json from your messages!
         """
+        raw = bool(raw)
         if (not ctx.message.channel.is_nsfw()) and nsfw:
             return await ctx.send(strings['tagger']['errors']['nsfw'].format(str(ctx.author)))
 
@@ -53,18 +54,26 @@ class Sentiment():
                 positive += tag['positive']
                 negative += tag['negative']
                 neutral += tag['neutral']
+
+            em = discord.Embed(title="Sentiment")
             positive = (math.ceil((positive / len(tags)) * 10000)) / 100
             negative = (math.ceil((negative / len(tags)) * 10000)) / 100
             neutral = (math.ceil((neutral / len(tags)) * 10000)) / 100
+            if raw:
 
-            file.close()
+                file.close()
 
-            em = discord.Embed(title="Sentiment")
+                em.add_field(name="Positivity", value=str(positive))
+                em.add_field(name="Negativity", value=str(negative))
+                em.add_field(name="Neutrality", value=str(neutral), inline=False)
+                em.add_field(name="Info", value="*Max value for these are 100 points, min are -100 points*",
+                             inline=False)
+            else:
 
-            em.add_field(name="Positivity", value=str(positive))
-            em.add_field(name="Negativity", value=str(negative))
-            em.add_field(name="Neutrality", value=str(neutral))
-            em.add_field(name="Info", value="*Max value for these are 100 points, min are -100 points*")
+                positive = math.floor(positive / 4)
+                em.add_field(name="Niceness", value=(":heart:" * positive), inline=False)
+                em.add_field(name="Evilness", value=(":smiling_imp:" * math.floor(negative)), inline=False)
+
             output = await ctx.send(embed=em)
         emoji = await self.client_extras.get_delete_emoji()
         emoji = emoji[1]
