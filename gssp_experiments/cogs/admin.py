@@ -15,6 +15,7 @@ from gssp_experiments.settings.config import config, strings
 startup_extensions = [
     "gssp_experiments.cogs.controls",
     "gssp_experiments.cogs.markov",
+    "gssp_experiments.cogs.sentiment",
     "gssp_experiments.cogs.slurs",
     "gssp_experiments.cogs.nyoom",
     "gssp_experiments.cogs.tagger",
