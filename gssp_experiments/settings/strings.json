@@ -15,7 +15,7 @@
       "argument_missing": "Argument missing: {}",
       "bad_argument": "Bad argument given: {}",
       "too_many_arguments": "Too many arguments given.",
-      "command_not_found": "oopsy woopsy! UwU **you** made a fucky wucky! a wittle fucko boingo!\n\nThat Command doesn't exist.",
+      "command_not_found": "Command not found.",
       "no_permission": "You do not have permission to do this, blah blah blah, don't try running this with sudo, won't work",
       "placeholder": "Placeholder embed. If you see this please message {}.",
       "command_error": "oopsy woopsy! UwU we made a fucky wucky! a wittle fucko boingo!\nGive this to a code ninja xD rawr: {}"

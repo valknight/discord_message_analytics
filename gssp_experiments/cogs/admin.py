@@ -7,10 +7,11 @@ from discord.ext import commands
 
 from gssp_experiments.checks import is_owner_or_admin
 from gssp_experiments.client_tools import ClientTools, add_message
-from gssp_experiments.colours import red, green
+from gssp_experiments.colours import green, red
 from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
+from gssp_experiments.utils import get_role
 
 startup_extensions = [
     "gssp_experiments.cogs.controls",
@@ -19,7 +20,8 @@ startup_extensions = [
     "gssp_experiments.cogs.slurs",
     "gssp_experiments.cogs.nyoom",
     "gssp_experiments.cogs.tagger",
-    "gssp_experiments.cogs.fun"
+    "gssp_experiments.cogs.fun",
+    "gssp_experiments.cogs.ping"
 ]
 
 
@@ -51,7 +53,7 @@ class Admin():
         self.client.load_extension(extension_name)
         await ctx.send("{} loaded.".format(extension_name))
 
-    @commands.is_owner()
+    @is_owner_or_admin()
     @commands.command()
     async def reload(self, ctx):
         """Reload all existing cogs"""
@@ -114,6 +116,25 @@ class Admin():
         await ctx.send(strings['process_check']['status']['opted_in'])
         return
 
+    @is_owner_or_admin()
+    @commands.command()
+    async def dump_roles(self, ctx):
+        to_write = ""
+        for guild in self.bot.guilds:
+            to_write += "\n\n=== {} ===\n\n".format(str(guild))
+            for role in guild.roles:
+                to_write += "{} : {}\n".format(role.name, role.id)
+        roles = open("roles.txt", "w")
+        roles.write(to_write)
+        roles.close()
+        await ctx.channel.send("Done! Check roles.txt")
+
+    @is_owner_or_admin()
+    @commands.command()
+    async def get_enabled_roles(self, ctx):
+        await ctx.channel.send(str(config.enabled_roles) + "\n\nCheck this against your roles.txt")
+
+
     @commands.command()
     async def combine_messages(self, ctx):
         """
@@ -152,6 +173,25 @@ class Admin():
                 pass
             cnx.commit()
         return await ctx.send("Done!")
+
+    @is_owner_or_admin()
+    @commands.command()
+    async def toggle_pingable(self, ctx, role_name):
+
+        roles = get_role(role_name)
+        if len(roles) == 0:
+            return await ctx.channel.send("Could not find that role!")
+        for role in roles:
+            if role['is_pingable'] == 1:
+                update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='0' WHERE `role_id`=%s;"
+                text = "not pingable"
+            else:
+                update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='1' WHERE `role_id`=%s;"
+                text = "pingable"
+            cursor.execute(update_query, (role['role_id'],))
+            await ctx.channel.send("**SUCCESS** : Set {} ({}) to {}".format(role['role_name'], role['role_id'], text))
+
+        cnx.commit()
 
 
 def setup(client):

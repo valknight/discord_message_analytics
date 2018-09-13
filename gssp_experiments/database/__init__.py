@@ -4,3 +4,4 @@ from gssp_experiments.settings.config import config
 
 cnx = mysql.connector.connect(**config['mysql'])
 cursor = cnx.cursor(buffered=True)
+cursor_dict = cnx.cursor(dictionary = True)

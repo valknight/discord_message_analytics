@@ -10,10 +10,9 @@ from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
 
-disabled_groups = config['discord']['disabled_groups']
+enabled_groups = config['discord']['enabled_groups']
 
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
-
 
 
 class ClientTools():
@@ -31,10 +30,17 @@ class ClientTools():
         nsfw: whether to only return NSFW channels
         """
         channel = self.client.get_channel(int(channel_id))
+        if channel is None:
+            return False
 
-        for group in disabled_groups:
+        enabled = False
+        for group in enabled_groups:
             if str(channel.category).lower() == str(group).lower():
-                return False
+                enabled = True
+                break
+
+        if not enabled:
+            return False
 
         if not existing_channel.is_nsfw() and bool(nsfw):
             return False
@@ -113,14 +119,12 @@ class ClientTools():
         """
         for guild in self.client.guilds:
             for cur_channel in guild.text_channels:
-                adding = True
-                for group in disabled_groups:
-                    try:
-                        if cur_channel.category.name.lower() == group.lower():
-                            adding = False
-                            break
-                    except AttributeError:
-                        adding = False
+                adding = False
+                for group in enabled_groups:
+                    if str(cur_channel.category).lower() == str(group).lower():
+                        adding = True
+                        break
+
                 if adding:
                     counter = 0
                     already_added = 0
