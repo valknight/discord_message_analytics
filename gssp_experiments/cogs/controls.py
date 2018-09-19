@@ -64,9 +64,12 @@ class Controls():
         """
         Opt in to automated messages. Run this again to opt out.
         """
+        if not self.database_tools.opted_in(user_id=ctx.author.id):
+            return await ctx.channel.send(strings['tagger']['errors']['not_opted_in'])
+
         if self.database_tools.is_automated(ctx.author):
             output = await ctx.channel.send("Opting you out of automation.")
-            query = "UPDATE `gssp_logging`.`users` SET `automate_opted_in`=b'0' WHERE `user_id`=%s;"
+            query = "UPDATE `users` SET `automate_opted_in`=b'0' WHERE `user_id`=%s;"
             cursor.execute(query, (ctx.author.id,))
             cnx.commit()
             return await output.edit(
@@ -74,7 +77,7 @@ class Controls():
 
         else:
             output = await ctx.channel.send("Opting you into automation")
-            query = "UPDATE `gssp_logging`.`users` SET `automate_opted_in`=b'1' WHERE `user_id`=%s;"
+            query = "UPDATE`users` SET `automate_opted_in`=b'1' WHERE `user_id`=%s;"
             cursor.execute(query, (ctx.author.id,))
             cnx.commit()
             return await output.edit(content='Opted in!')
