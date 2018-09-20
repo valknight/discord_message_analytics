@@ -10,11 +10,9 @@ def get_role(role_name):
     members = []
     try:
         a = cursor.fetchall()[0]
-        members += json.loads(a['role_assignees'])  # we do this incase we have multiple roles with the same name,
-        # in order to assist with migration, and allows us to more easily manage aliases in future
+        members += json.loads(a['role_assignees'])
     except IndexError:
         return None
-    print(a)
     a['members'] = members
     return a
 

@@ -9,7 +9,7 @@ from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.database_tools import DatabaseTools
+from gssp_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, update_role
 from gssp_experiments.role_c import DbRole
 from gssp_experiments.settings.config import config, strings
 
@@ -43,12 +43,6 @@ if config['version'] != __version__:
     else:
         print(strings['config_invalid_ignored'].format(__version__, str(config['version'])))
 
-insert_users = "INSERT INTO `gssp`.`users` (`user_id`) VALUES (%s);"
-insert_settings = "INSERT INTO `gssp`.`ping_settings` (`user_id`) VALUES (%s);"
-insert_role = "INSERT INTO `gssp`.`roles` (`role_id`) VALUES (%s);"
-update_role = "UPDATE `gssp`.`roles` SET `role_name`=%s WHERE `role_id`=%s;"
-
-
 @client.event
 async def on_ready():
     print("[Connected to Discord]\n[Username]  -   [ {} ]\n[User  ID]  -   [ {} ]".format(client.user.name,
@@ -60,7 +54,7 @@ async def on_ready():
     members = []
     for server in client.guilds:
         for member in server.members:
-	        name = database_tools.opted_in(user_id = member.id)
+            name = database_tools.opted_in(user_id = member.id)
             if name is not False:
                 members.append(member)
     messages_processed = "SELECT COUNT(*) FROM messages_detailed"
@@ -70,36 +64,37 @@ async def on_ready():
 
     # build dataset for pinging
     for guild in client.guilds:
-	    for member in guild.members:
-		    try:
-			    cursor.execute(insert_users, (member.id,))
-		    except mysql.connector.errors.IntegrityError:
-			    pass  # we pass because we just want to make sure we add any new users, so we expect some already here
-		    try:
-			    cursor.execute(insert_settings, (member.id,))
-		    except mysql.connector.errors.IntegrityError:
-			    pass  # see above
-	    print("{}: Finished users".format(str(guild)))
-	    for role in guild.roles:
-		    if role.name != "@everyone":
-			    try:
-				    cursor.execute(insert_role, (role.id,))
-			    except mysql.connector.errors.IntegrityError:
-				    pass
+        print("{}: Updating users".format(str(guild)))
+        for member in guild.members:
+            try:
+                cursor.execute(insert_users, (member.id,))
+            except mysql.connector.errors.IntegrityError:
+                pass  # we pass because we just want to make sure we add any new users, so we expect some already here
+            try:
+                cursor.execute(insert_settings, (member.id,))
+            except mysql.connector.errors.IntegrityError:
+                pass  # see above
+        print("{}: Finished {} users".format(str(guild), len(guild.members)))
+        print("{}: Updating roles".format(str(guild)))
+        for role in guild.roles:
+            if role.name != "@everyone":
+                try:
+                    cursor.execute(insert_role, (role.id, role.name))
+                except mysql.connector.errors.IntegrityError:
+                    pass
 
-			    # this is designed to assist with migration, by moving old discord role members over to the new
-			    # system seamlessly
-			    member_ids = []
-			    for member in role.members:
-				    member_ids.append(member.id)
-			    role_db = DbRole(role.id, role.name, 0, members = member_ids)
-			    role_db.save_members()
+                # this is designed to assist with migration, by moving old discord role members over to the new
+                # system seamlessly
+                member_ids = []
+                for member in role.members:
+                    member_ids.append(member.id)
+                role_db = DbRole(role.id, role.name, 0, members = member_ids)
+                role_db.save_members()
+                cursor.execute(update_role, (emoji.demojize(role.name), role.id))
+        print("{}: Finished {} roles".format(guild, len(guild.roles)))
+        cnx.commit()
+        print("{} SAVED\n====================\n".format(str(guild)))
 
-			    print(role.name + " > " + emoji.demojize(role.name))
-			    cursor.execute(update_role, (emoji.demojize(role.name), role.id))
-	    print("{}: Finished roles".format(str(guild)))
-	    print("{} is done!".format(str(guild)))
-	    cnx.commit()
     print("Done!")
 
     print("Bot running with " + str(
@@ -118,41 +113,41 @@ async def on_message(message):
 @client.event
 async def aon_command_error(ctx, error):
     if isinstance(error, commands.CommandInvokeError):
-	    embed = discord.Embed(title = 'Command Error')
+        embed = discord.Embed(title = 'Command Error')
         embed.description = str(error)
-	    embed.add_field(name = 'Server', value = ctx.guild)
-	    embed.add_field(name = 'Channel', value = ctx.channel.mention)
-	    embed.add_field(name = 'User', value = ctx.author)
-	    embed.add_field(name = 'Message', value = ctx.message.content)
+        embed.add_field(name = 'Server', value = ctx.guild)
+        embed.add_field(name = 'Channel', value = ctx.channel.mention)
+        embed.add_field(name = 'User', value = ctx.author)
+        embed.add_field(name = 'Message', value = ctx.message.content)
         embed.timestamp = datetime.datetime.utcnow()
-	    await ctx.send(embed = embed)
+        await ctx.send(embed = embed)
     else:
         if isinstance(error, commands.NoPrivateMessage):
-	        embed = discord.Embed(description = "")
+            embed = discord.Embed(description = "")
         elif isinstance(error, commands.DisabledCommand):
-	        embed = discord.Embed(description = strings['errors']['disabled'])
+            embed = discord.Embed(description = strings['errors']['disabled'])
         elif isinstance(error, commands.MissingRequiredArgument):
-	        embed = discord.Embed(description = strings['errors']['argument_missing'].format(error.args[0]))
+            embed = discord.Embed(description = strings['errors']['argument_missing'].format(error.args[0]))
         elif isinstance(error, commands.BadArgument):
-	        embed = discord.Embed(description = strings['errors']['bad_argument'].format(error.args[0]))
+            embed = discord.Embed(description = strings['errors']['bad_argument'].format(error.args[0]))
         elif isinstance(error, commands.TooManyArguments):
-	        embed = discord.Embed(description = strings['errors']['too_many_arguments'])
+            embed = discord.Embed(description = strings['errors']['too_many_arguments'])
         elif isinstance(error, commands.BotMissingPermissions):
-	        embed = discord.Embed(description = "{}".format(error.args[0].replace("Bot", strings['bot_name'])))
+            embed = discord.Embed(description = "{}".format(error.args[0].replace("Bot", strings['bot_name'])))
         elif isinstance(error, commands.MissingPermissions):
-	        embed = discord.Embed(description = "{}".format(error.args[0]))
+            embed = discord.Embed(description = "{}".format(error.args[0]))
         elif isinstance(error, commands.NotOwner):
-	        embed = discord.Embed(description = strings['errors']['not_owner'].format(strings['owner_firstname']))
+            embed = discord.Embed(description = strings['errors']['not_owner'].format(strings['owner_firstname']))
         elif isinstance(error, commands.CheckFailure):
-	        embed = discord.Embed(description = strings['errors']['no_permission'])
+            embed = discord.Embed(description = strings['errors']['no_permission'])
         elif isinstance(error, commands.CommandError):
-	        if not config['discord']['prompt_command_exist']:
-		        embed = discord.Embed(description = "")
-		        return
-	        embed = discord.Embed(description = strings['errors']['command_not_found'])
+            if not config['discord']['prompt_command_exist']:
+                embed = discord.Embed(description = "")
+                return
+            embed = discord.Embed(description = strings['errors']['command_not_found'])
         else:
             embed = discord.Embed(
-	            description = strings['errors']['placeholder'].format(strings['bot_name']))
+                description = strings['errors']['placeholder'].format(strings['bot_name']))
         if embed:
             embed.colour = 0x4c0000
             await ctx.send(embed = embed, delete_after = config['discord']['delete_timeout'])
@@ -160,15 +155,15 @@ async def aon_command_error(ctx, error):
 
 @client.event
 async def on_member_join(member):
-	try:
-		cursor.execute(insert_users, (member.id,))
-	except mysql.connector.errors.IntegrityError:
-		pass  # we pass because we just want to make sure we add any new users, so we expect some already here
-	try:
-		cursor.execute(insert_settings, (member.id,))
-	except mysql.connector.errors.IntegrityError:
-		pass  # see above
-	print("Added {}".format(str(member)))
+    try:
+        cursor.execute(insert_users, (member.id,))
+    except mysql.connector.errors.IntegrityError:
+        pass  # we pass because we just want to make sure we add any new users, so we expect some already here
+    try:
+        cursor.execute(insert_settings, (member.id,))
+    except mysql.connector.errors.IntegrityError:
+        pass  # see above
+    print("Added {}".format(str(member)))
 
 
 if __name__ == "__main__":

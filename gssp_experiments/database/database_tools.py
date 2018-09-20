@@ -5,7 +5,10 @@ import mysql.connector.errors
 from gssp_experiments.database import cursor, cnx
 
 add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
-
+insert_users = "INSERT INTO `gssp`.`users` (`user_id`) VALUES (%s);"
+insert_settings = "INSERT INTO `gssp`.`ping_settings` (`user_id`) VALUES (%s);"
+insert_role = "INSERT INTO `gssp`.`roles` (`role_id`, `role_name`) VALUES (%s, %s);"
+update_role = "UPDATE `gssp`.`roles` SET `role_name`=%s WHERE `role_id`=%s;"
 
 class DatabaseTools():
     def __init__(self, client):

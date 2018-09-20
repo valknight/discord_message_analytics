@@ -6,6 +6,7 @@ from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.colours import gold
 from gssp_experiments.database import cnx, cursor_dict as cursor
 from gssp_experiments.database.database_tools import DatabaseTools
+from gssp_experiments.role_c import DbRole
 from gssp_experiments.utils import get_role, get_user
 
 
@@ -55,7 +56,7 @@ class Ping():
     async def ping(self, ctx, role_name):
         role = get_role(role_name)
         if role is None:
-            return await ctx.channel.send("Cannot find that role.")
+            return await ctx.channel.send("**FAIL** : Cannot find that role.")
         print(role)
         if role['is_pingable']:
             public_message = ""
@@ -87,7 +88,42 @@ class Ping():
                 return await ctx.channel.send(
                     public_message + "\n\n Message: {} \n **Author:** {}".format(str(ctx.message.content),
                                                                                  str(ctx.author)))
+        else:
+            return await ctx.channel.send("**FAIL** : Role not pingable")
 
+    @commands.command()
+    async def join_role(self, ctx, role_name):
+        """Join a ping group / role given a name"""
+        role = get_role(role_name)
+        try:
+            if not role['is_joinable']:
+                return await ctx.channel.send("**FAIL** : This role cannot currently be joined.")
+        except TypeError:
+            return await ctx.channel.send("**FAIL** : Could not find role - if you put spaces in, make sure it's in "
+                                          "\"Quotation marks like this\"")
+        cur_members = role['members']
 
+        if ctx.author.id in cur_members:
+            return await ctx.channel.send("**FAIL** : You are already a member of this role!")
+
+        cur_members.append(ctx.author.id)
+        updated_role = DbRole(role['role_id'], role['role_name'], role['is_pingable'], members=cur_members)
+        updated_role.save_members()
+        return await ctx.channel.send("**SUCCESS** : You have now joined {}".format(role['role_name']))
+
+    @commands.command()
+    async def leave_role(self, ctx, role_name):
+        """Join a ping group / role given a name"""
+        role = get_role(role_name)
+
+        cur_members = role['members']
+
+        if ctx.author.id not in cur_members:
+            return await ctx.channel.send("**FAIL** : You are not a member of this role!")
+
+        cur_members.remove(ctx.author.id)
+        updated_role = DbRole(role['role_id'], role['role_name'], role['is_pingable'], members = cur_members)
+        updated_role.save_members()
+        return await ctx.channel.send("**SUCCESS** : You have now left {}".format(role['role_name']))
 def setup(client):
     client.add_cog(Ping(client))

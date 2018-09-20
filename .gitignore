@@ -58,3 +58,8 @@ docs/_build/
 target/
 
 config\.json
+
+venv/
+.github/
+.idea/
+config.json
