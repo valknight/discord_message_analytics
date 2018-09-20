@@ -1,9 +1,10 @@
 {
-  "version": "0.8.1",
+  "version": "0.9",
   "limit" : 5000,
   "limit_server" : 1000,
   "version_check": true,
   "discord": {
+    "unembed_channel": channel_id,
     "warning_channel": channel_id,
     "nyoom_interval" : 60,
     "prompt_command_exist": true,

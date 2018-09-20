@@ -18,7 +18,7 @@ client = commands.Bot(command_prefix = config['discord']['prefix'], owner_id = c
 client_tools = ClientTools(client)
 database_tools = DatabaseTools(client)
 token = config['discord']['token']
-__version__ = "0.8.1"
+__version__ = "0.9"
 
 if config['version'] == "0.5" and __version__ == "0.5.1":
     config['version'] = "0.5.1"
@@ -113,14 +113,7 @@ async def on_message(message):
 @client.event
 async def aon_command_error(ctx, error):
     if isinstance(error, commands.CommandInvokeError):
-        embed = discord.Embed(title = 'Command Error')
-        embed.description = str(error)
-        embed.add_field(name = 'Server', value = ctx.guild)
-        embed.add_field(name = 'Channel', value = ctx.channel.mention)
-        embed.add_field(name = 'User', value = ctx.author)
-        embed.add_field(name = 'Message', value = ctx.message.content)
-        embed.timestamp = datetime.datetime.utcnow()
-        await ctx.send(embed = embed)
+        await client_tools.error_embed(ctx, error)
     else:
         if isinstance(error, commands.NoPrivateMessage):
             embed = discord.Embed(description = "")

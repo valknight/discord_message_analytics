@@ -92,6 +92,16 @@
       "opt_in_footer": "To proceed, please run this command again.",
       "data_track_start": "Initialising data tracking",
       "complete": "Finished building {}'s entry! Data analysis can now be ran. If you wish to update your data record at any time, just simply run this command again!"
+    },
+    "unembed": {
+      "status": {
+        "no_message": "No message provided.",
+        "no_attachments": "Please upload one or more attachments when running this command."
+      },
+      "errors": {
+        "download": "Failed to fetch attachment(s). Please try your upload again, and report this issue if it persists.",
+        "upload": "Failed to re-upload attachment(s). Please try your upload again, and report this issue if it persists."
+      }
     }
   }
 }

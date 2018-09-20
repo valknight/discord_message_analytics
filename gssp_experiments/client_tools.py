@@ -1,4 +1,5 @@
 import concurrent
+import datetime
 import json
 
 import discord
@@ -82,6 +83,16 @@ class ClientTools():
         else:
             emoji_name = "❌"
         return emoji_name, delete_emoji
+
+    async def error_embed(self, ctx, error, message=None, colour=discord.Embed.Empty):
+        embed = discord.Embed(title='Command Error', colour=colour)
+        embed.description = str(error)
+        embed.add_field(name='Server', value=ctx.guild)
+        embed.add_field(name='Channel', value=ctx.channel.mention)
+        embed.add_field(name='User', value=ctx.author)
+        embed.add_field(name='Message', value=ctx.message.content)
+        embed.timestamp = datetime.datetime.utcnow()
+        await ctx.send(content=message, embed=embed)
 
     async def markov_embed(self, title, message):
         em = discord.Embed(title=title, description=message)
