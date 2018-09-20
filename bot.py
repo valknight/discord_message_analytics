@@ -18,7 +18,7 @@ client = commands.Bot(command_prefix = config['discord']['prefix'], owner_id = c
 client_tools = ClientTools(client)
 database_tools = DatabaseTools(client)
 token = config['discord']['token']
-__version__ = "0.8.1"
+__version__ = "0.9"
 
 if config['version'] == "0.5" and __version__ == "0.5.1":
     config['version'] = "0.5.1"
