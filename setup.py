@@ -3,11 +3,11 @@ import os
 
 import mysql.connector
 
+# Load config file
+from gssp_experiments.settings.config import config
+
 discordpy_command = "python3 -m pip install -U https://github.com/Rapptz/discord.py/archive/rewrite.zip#egg=discord.py"
 requirements = "python3 -m pip install -r requirements.txt"
-# Load config files
-config_f = open("config.json")
-config = json.load(config_f)
 
 # Setup discord.py + requirements
 print("Installing discord.py...")
@@ -28,6 +28,7 @@ CREATE TABLE `users` (
   `user_id` varchar(64) CHARACTER SET utf8 NOT NULL,
   `username` varchar(64) CHARACTER SET utf8 NOT NULL,
   `opted_in` bit(1) NOT NULL DEFAULT b'0',
+  `automate_opted_in` bit(1) NOT NULL DEFAULT b'0',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci
@@ -92,7 +93,7 @@ make_table(users)
 print("\nCreating messages table")
 make_table(messages)
 print("\nCreating detailed messages table")
-make_table(messages)
+make_table(messages_detailed)
 print("\nCreating markovs table")
 make_table(markovs)
 print("\nCreating blocklist table")
