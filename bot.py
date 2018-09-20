@@ -113,14 +113,7 @@ async def on_message(message):
 @client.event
 async def aon_command_error(ctx, error):
     if isinstance(error, commands.CommandInvokeError):
-        embed = discord.Embed(title = 'Command Error')
-        embed.description = str(error)
-        embed.add_field(name = 'Server', value = ctx.guild)
-        embed.add_field(name = 'Channel', value = ctx.channel.mention)
-        embed.add_field(name = 'User', value = ctx.author)
-        embed.add_field(name = 'Message', value = ctx.message.content)
-        embed.timestamp = datetime.datetime.utcnow()
-        await ctx.send(embed = embed)
+        await client_tools.error_embed(ctx, error)
     else:
         if isinstance(error, commands.NoPrivateMessage):
             embed = discord.Embed(description = "")
