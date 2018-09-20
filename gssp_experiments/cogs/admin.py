@@ -23,7 +23,8 @@ startup_extensions = [
     "gssp_experiments.cogs.nyoom",
     "gssp_experiments.cogs.tagger",
     "gssp_experiments.cogs.fun",
-    "gssp_experiments.cogs.ping"
+    "gssp_experiments.cogs.ping",
+    "gssp_experiments.cogs.unembed"
 ]
 
 
