@@ -3,7 +3,7 @@
 
 [![CodeFactor](https://www.codefactor.io/repository/github/valerokai/gssp_experiments/badge/master)](https://www.codefactor.io/repository/github/valerokai/gssp_experiments/overview/master)
 
-**Note: This bot requires *express* user consent. Modifying this bot to remove these checking features would result in you violating Discord TOS. Don't do it.**
+**Note: This bot requires *express* user consent. Modifying this bot to remove these checking features would result in you violating Discord TOS.**
 
 ## Requirements
  - Python 3.5 or higher
