@@ -102,6 +102,9 @@
         "download": "Failed to fetch attachment(s). Please try your upload again, and report this issue if it persists.",
         "upload": "Failed to re-upload attachment(s). Please try your upload again, and report this issue if it persists."
       }
+    },
+    "ping": {
+      "help": "Want to find out how to use the new ping system? Run ?about_pings to find out more!"
     }
   }
 }

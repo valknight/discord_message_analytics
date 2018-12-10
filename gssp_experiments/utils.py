@@ -16,6 +16,12 @@ def get_role(role_name):
     a['members'] = members
     return a
 
+def get_roles():
+    cnx.commit()
+    query = "SELECT * FROM `gssp`.`roles` WHERE `is_joinable` = 1"
+    cursor.execute(query)
+    return cursor.fetchall()
+
 
 def get_user(user_id):
     cnx.commit()  # we run this just to make sure we have nothing pending

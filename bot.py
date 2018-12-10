@@ -13,6 +13,7 @@ from gssp_experiments.database.database_tools import DatabaseTools, insert_users
 from gssp_experiments.role_c import DbRole
 from gssp_experiments.settings.config import config, strings
 
+
 client = commands.Bot(command_prefix = config['discord']['prefix'], owner_id = config['discord']['owner_id'])
 
 client_tools = ClientTools(client)
@@ -50,6 +51,13 @@ async def on_ready():
     print("Loading cogs.")
     client.load_extension("gssp_experiments.cogs.admin")
     print("Loaded!")
+
+    print("Syncing channels...")
+    query = "INSERT INTO channels (channel_id, channel_name) VALUES (%s, %s)"
+    for guild in client.guilds:
+        for channel in guild.text_channels:
+            cursor.execute(query, (channel.id, channel.name))
+            print("Added {}".format(channel.name))
 
     members = []
     for server in client.guilds:
