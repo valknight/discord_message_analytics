@@ -91,7 +91,11 @@
       "opt_in_title": "Welcome to GSSP experiments! :atom:",
       "opt_in_footer": "To proceed, please run this command again.",
       "data_track_start": "Initialising data tracking",
-      "complete": "Finished building {}'s entry! Data analysis can now be ran. If you wish to update your data record at any time, just simply run this command again!"
+      "complete": "Finished building {}'s entry! Data analysis can now be ran. If you wish to update your data record at any time, just simply run this command again!",
+      "opt_out_starting_title": "Starting optout",
+      "opt_out_starting_message": "Please check back with this message for updates.",
+      "opt_out_finish_title": "Finished optout",
+      "opt_out_finish_message": "You have been opted out. All messages were deleted from our (not discord's) records in this process."
     },
     "unembed": {
       "status": {
