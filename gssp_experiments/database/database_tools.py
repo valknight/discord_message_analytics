@@ -3,12 +3,14 @@ import json
 import mysql.connector.errors
 
 from gssp_experiments.database import cursor, cnx
+from gssp_experiments.logger import logger
 
 add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
 insert_users = "INSERT INTO `gssp`.`users` (`user_id`) VALUES (%s);"
 insert_settings = "INSERT INTO `gssp`.`ping_settings` (`user_id`) VALUES (%s);"
 insert_role = "INSERT INTO `gssp`.`roles` (`role_id`, `role_name`) VALUES (%s, %s);"
 update_role = "UPDATE `gssp`.`roles` SET `role_name`=%s WHERE `role_id`=%s;"
+
 
 class DatabaseTools():
     def __init__(self, client):
@@ -17,24 +19,27 @@ class DatabaseTools():
     def add_message_to_db(self, message):
         from gssp_experiments.client_tools import ClientTools
         self.client_tools = ClientTools(self.client)
-        is_allowed = self.client_tools.channel_allowed(message.channel.id, message.channel, message.channel.is_nsfw())
+        is_allowed = self.client_tools.channel_allowed(
+            message.channel.id, message.channel, message.channel.is_nsfw())
         if is_allowed:
             try:
                 while True:
                     result = cursor.fetchone()
                     if result is not None:
-                        print(result + " - < Unread result")
+                        logger.debug(result + " - < Unread result")
                     else:
                         break
                 cursor.execute(add_message_custom, (
-                    int(message.id), message.author.id, str(message.channel.id),
+                    int(message.id), message.author.id, str(
+                        message.channel.id),
                     message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     message.content,))
             except mysql.connector.errors.IntegrityError:
                 pass
             except mysql.connector.errors.DataError:
-                print("Couldn't insert {} - likely a time issue".format(message.id))
-        cnx.commit()
+                logger.warn(
+                    "Couldn't insert {} - likely a time issue".format(message.id))
+            cnx.commit()
 
     def opted_in(self, user=None, user_id=None):
         """
