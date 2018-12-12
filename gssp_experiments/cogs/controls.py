@@ -8,7 +8,7 @@ from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cursor, cnx
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import strings, config
-
+from gssp_experiments import colours
 opt_in_message = """
 We want to protect your information, and therefore you need to read the following in detail. We keep it brief as a lot of this is important for you to know incase you change your mind in the future.
             ```
@@ -95,7 +95,7 @@ class Controls():
         if command is None:
             return await ctx.send("""
         No subcommand selected - please enter a subcommand for your blocklist.
-    
+
         ?blocklist add [word] : Add word to blocklist
         ?blocklist remove [word] : Remove word from blocklist
         ?blocklist get : Get PM of current blocklist
@@ -144,7 +144,8 @@ class Controls():
             else:
                 msg = strings['blocklist']['status']['list']
                 for item in blockL:
-                    part = ' ' + item + ','  # done so that the merge with the long string is only done once per word
+                    # done so that the merge with the long string is only done once per word
+                    part = ' ' + item + ','
                     msg += part
                 msg = msg[:-1]  # trim off the trailing ,
             # send a private message with the nice to look at blocklist
@@ -154,13 +155,26 @@ class Controls():
         else:
             return await ctx.send("""
     No subcommand selected - please enter a subcommand for your blocklist.
-    
+
     ?blocklist add [word] : Add word to blocklist
     ?blocklist remove [word] : Remove word from blocklist
     ?blocklist get : Get PM of current blocklist
                 """)
 
         await msg.edit(content=strings['blocklist']['status']['complete'])
+
+    @commands.command()
+    async def optout(self, ctx):
+        """
+        Run this to optout of experiments, and delete your data
+        """
+        em = discord.Embed(
+            title=strings['data_collection']['opt_out_starting_title'], description=strings['data_collection']['opt_out_starting_message'], color=colours.red)
+        current_embed = await ctx.send(embed=em)
+        await self.client_tools.optout_user(ctx.author)
+        em = discord.Embed(title=strings['data_collection']['opt_out_finish_title'],
+                           description=strings['data_collection']['opt_out_finish_message'], color=colours.green)
+        await current_embed.edit(embed=em)
 
 
 def setup(client):

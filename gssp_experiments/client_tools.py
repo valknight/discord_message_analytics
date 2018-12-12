@@ -10,7 +10,7 @@ from gssp_experiments import colours
 from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
-
+from gssp_experiments.logger import logger
 enabled_groups = config['discord']['enabled_groups']
 
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")
@@ -47,7 +47,8 @@ class ClientTools():
             return False
 
         if channel.is_nsfw():
-            return bool(nsfw)  # checks if user wants / is allowed explicit markovs
+            # checks if user wants / is allowed explicit markovs
+            return bool(nsfw)
             # this means that if the channel *is* NSFW, we return True, but if it isn't, we return False
         else:  # channel is SFW
             if bool(nsfw):
@@ -114,7 +115,7 @@ class ClientTools():
             await message.remove_reaction(delete_emoji, client.user)
             await message.remove_reaction(delete_emoji, ctx.author)
             em = discord.Embed(title=str(ctx.message.author) +
-                                     " deleted message", description="User deleted this message.")
+                               " deleted message", description="User deleted this message.")
 
             return await message.edit(embed=em)
         except concurrent.futures._base.TimeoutError:
@@ -142,11 +143,11 @@ class ClientTools():
                     async for message in cur_channel.history(limit=limit, reverse=True):
                         if message.author in members:
                             self.database_tools.add_message_to_db(message)
-                    print(
-                        "{} scraped for {} users - added {} messages, found {} already added".format(cur_channel.name,
-                                                                                                     len(members),
-                                                                                                     counter,
-                                                                                                     already_added))
+                    logger.info("{} scraped for {} users - added {} messages, found {} already added".format(cur_channel.name,
+                                                                                                             len(
+                                                                                                                 members),
+                                                                                                             counter,
+                                                                                                             already_added))
 
     async def process_message(self, message):
         await self.check_slurs(message)
@@ -154,6 +155,7 @@ class ClientTools():
 
         if user_exp is not False:
             self.database_tools.add_message_to_db(message)
+        logger.debug("Message from {}".format(user_exp))
         # this records analytical data - don't adjust this without reading
         # Discord TOS first
         try:
@@ -179,7 +181,8 @@ class ClientTools():
             if slur.lower() != "" and slur in message.content.lower():
                 matches.append(slur)
         if len(matches) > 0:
-            embed = discord.Embed(title="Potential usage of slur detected", color=colours.dark_red)
+            embed = discord.Embed(
+                title="Potential usage of slur detected", color=colours.dark_red)
 
             embed.add_field(name="Slur(s)", value=str(matches))
             embed.add_field(name="Message", value=str(message.content))
@@ -188,8 +191,22 @@ class ClientTools():
             embed.add_field(name="Channel", value=str(message.channel))
             embed.add_field(name="Time", value=str(message.created_at))
             embed.add_field(name="Message ID", value=str(message.id))
-            embed.add_field(name="Guild ID", value=str(message.channel.guild.id))
+            embed.add_field(name="Guild ID", value=str(
+                message.channel.guild.id))
             embed.add_field(name="Guild", value=str(message.channel.guild))
 
-            channel = self.client.get_channel(config['discord']['warning_channel'])
+            channel = self.client.get_channel(
+                config['discord']['warning_channel'])
             await channel.send(embed=embed)
+
+    async def optout_user(self, user):
+        """
+        Opt a user out of experiments, and delete their data
+        Returns number of messages deleted
+        """
+        logger.info("Deleting data for user ID {}".format(user.id))
+        cursor.execute("DELETE FROM users WHERE user_id = %s", (user.id, ))
+        result = cursor.execute(
+            "DELETE FROM messages_detailed WHERE user_id = %s", (user.id, ))
+        cnx.commit()
+        logger.info("Data deleted.")
