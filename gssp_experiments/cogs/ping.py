@@ -63,7 +63,6 @@ class Ping():
         role = get_role(role_name)
         if role is None:
             return await ctx.channel.send("**FAIL** : Cannot find that role.")
-        print(role)
         if role['is_pingable']:
             public_message = ""
             for member in role['members']:
@@ -71,9 +70,7 @@ class Ping():
                 # get_member is used instead of get_user as User doesn't
                 user_discord = ctx.guild.get_member(member)
                 # not have a status property, only Members
-                print(member)
                 if user_discord.status != discord.Status.offline or (user_db['ping_online_only'] != 1):
-                    print("Member allowed")
                     if user_db['ping_public'] == 1:
                         public_message += user_discord.mention + " "
                     else:
