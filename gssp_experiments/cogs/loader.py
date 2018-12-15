@@ -21,6 +21,7 @@ startup_extensions = [
     "gssp_experiments.cogs.fun",
     "gssp_experiments.cogs.ping",
     "gssp_experiments.cogs.unembed"
+#    "gssp_experiments.cogs.automated"
 ]
 
 
@@ -31,8 +32,8 @@ class Loader():
     """
 
     def __init__(self, client):
-        self.automated = subprocess.Popen(
-            [sys.executable, "automated_messages.py"])
+        # self.automated = subprocess.Popen(
+        #    [sys.executable, "automated_messages.py"])
         self.client = client
         self.client_tools = ClientTools(client)
         # we look for ".admin" and then add "." to prevent matching a root directory ending in admin
@@ -64,17 +65,11 @@ class Loader():
     @commands.command()
     async def reload(self, ctx):
         """Reload all existing cogs"""
-
-        em = discord.Embed(title="Killing automated bot", color=red)
-        output = await ctx.channel.send(embed=em)
-        self.automated.kill()
-
-        reload_text = "Reloading {}"
         startup_extensions_temp = startup_extensions
         startup_extensions_temp.insert(0, "gssp_experiments.cogs.loader")
 
         em = discord.Embed(title="Reloading - please wait", color=red)
-        await output.edit(embed=em)
+        output = await ctx.send(embed=em)
 
         for cog in startup_extensions_temp:
             self.client.unload_extension(cog)
