@@ -111,45 +111,49 @@ async def on_message(message):
 
 @client.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandInvokeError):
-        await client_tools.error_embed(ctx, error)
-    else:
-        if isinstance(error, commands.NoPrivateMessage):
-            embed = discord.Embed(description="")
-        elif isinstance(error, commands.DisabledCommand):
-            embed = discord.Embed(description=strings['errors']['disabled'])
-        elif isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(
-                description=strings['errors']['argument_missing'].format(error.args[0]))
-        elif isinstance(error, commands.BadArgument):
-            embed = discord.Embed(
-                description=strings['errors']['bad_argument'].format(error.args[0]))
-        elif isinstance(error, commands.TooManyArguments):
-            embed = discord.Embed(
-                description=strings['errors']['too_many_arguments'])
-        elif isinstance(error, commands.BotMissingPermissions):
-            embed = discord.Embed(description="{}".format(
-                error.args[0].replace("Bot", strings['bot_name'])))
-        elif isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(description="{}".format(error.args[0]))
-        elif isinstance(error, commands.NotOwner):
-            embed = discord.Embed(
-                description=strings['errors']['not_owner'].format(strings['owner_firstname']))
-        elif isinstance(error, commands.CheckFailure):
-            embed = discord.Embed(
-                description=strings['errors']['no_permission'])
-        elif isinstance(error, commands.CommandError):
-            if not config['discord']['prompt_command_exist']:
-                embed = discord.Embed(description="")
-                return
-            embed = discord.Embed(
-                description=strings['errors']['command_not_found'])
+    if not debug:
+        if isinstance(error, commands.CommandInvokeError):
+            await client_tools.error_embed(ctx, error)
         else:
-            embed = discord.Embed(
-                description=strings['errors']['placeholder'].format(strings['bot_name']))
-        if embed:
-            embed.colour = 0x4c0000
-            await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+            if isinstance(error, commands.NoPrivateMessage):
+                embed = discord.Embed(description="")
+            elif isinstance(error, commands.DisabledCommand):
+                embed = discord.Embed(
+                    description=strings['errors']['disabled'])
+            elif isinstance(error, commands.MissingRequiredArgument):
+                embed = discord.Embed(
+                    description=strings['errors']['argument_missing'].format(error.args[0]))
+            elif isinstance(error, commands.BadArgument):
+                embed = discord.Embed(
+                    description=strings['errors']['bad_argument'].format(error.args[0]))
+            elif isinstance(error, commands.TooManyArguments):
+                embed = discord.Embed(
+                    description=strings['errors']['too_many_arguments'])
+            elif isinstance(error, commands.BotMissingPermissions):
+                embed = discord.Embed(description="{}".format(
+                    error.args[0].replace("Bot", strings['bot_name'])))
+            elif isinstance(error, commands.MissingPermissions):
+                embed = discord.Embed(description="{}".format(error.args[0]))
+            elif isinstance(error, commands.NotOwner):
+                embed = discord.Embed(
+                    description=strings['errors']['not_owner'].format(strings['owner_firstname']))
+            elif isinstance(error, commands.CheckFailure):
+                embed = discord.Embed(
+                    description=strings['errors']['no_permission'])
+            elif isinstance(error, commands.CommandError):
+                if not config['discord']['prompt_command_exist']:
+                    embed = discord.Embed(description="")
+                    return
+                embed = discord.Embed(
+                    description=strings['errors']['command_not_found'])
+            else:
+                embed = discord.Embed(
+                    description=strings['errors']['placeholder'].format(strings['bot_name']))
+            if embed:
+                embed.colour = 0x4c0000
+                await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
+    else:
+        raise error
 
 
 @client.event
