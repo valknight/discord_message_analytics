@@ -155,8 +155,10 @@ class Ping():
         to_send = ""
         for role in roles:
             if str(ctx.author.id) in role['role_assignees']:
+                if role['is_pingable']:
+                    role['role_name'] = "**{}**".format(role['role_name'])
                 to_send = to_send + "- {}\n".format(role['role_name'])
-        em = Embed(title="Roles you are part of", colour=gold, description=to_send)
+        em = Embed(title="Roles you are part of", description="Roles that can be pinged are in bold", colour=gold, description=to_send)
         em.set_footer(text=strings['ping']['help'])
         return await ctx.channel.send(embed=em)
 
