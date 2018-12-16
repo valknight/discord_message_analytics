@@ -136,16 +136,30 @@ class Ping():
         return await ctx.channel.send("**SUCCESS** : You have now left {}".format(role['role_name']))
 
     @commands.command(aliases=["allroles", "all_roles"])
-    async def roles(self, ctx):
-        """Get all possible roles, and how to ping them"""
-        roles = get_roles(ctx.guild.id)
+    async def roles(self, ctx, show_all=0):
+        """Get all possible roles"""
+        just_joinable = not bool(show_all)
+        if just_joinable:
+            spacer = " joinable "
+        else:
+            spacer = " "
+        roles = get_roles(ctx.guild.id, limit_to_joinable=just_joinable)
         to_send = ""
+        em = Embed(title="All{}roles".format(spacer),
+                colour=gold)
         for role in roles:
-            to_send = to_send + \
-                " - {}ping **{}**\n".format(config['discord']
-                                            ['prefix'], role['role_name'])
-        em = Embed(title="Premade commands to ping every enabled role",
-                   colour=gold, description=to_send)
+            if role['is_pingable']:
+                role['role_name'] = "**{}**".format(role['role_name'])
+            temp_to_send = to_send + \
+                " - {}\n".format(role['role_name'])
+            if len(temp_to_send) > 2048: # stops going over char limit
+                em.description = to_send
+                await ctx.channel.send(embed=em)
+                em = Embed(colour=gold)
+                to_send = "- {}\n".format(role['role_name'])
+            else:
+                to_send = temp_to_send
+        em.description = to_send
         em.set_footer(text=strings['ping']['help'])
         return await ctx.channel.send(embed=em)
 
@@ -153,12 +167,21 @@ class Ping():
     async def my_roles(self, ctx):
         roles = get_roles(ctx.guild.id, limit_to_joinable=False)
         to_send = "Roles that can be pinged are highlighted in bold.\n"
+        em = Embed(title="Roles you are part of", colour=gold)
         for role in roles:
             if str(ctx.author.id) in role['role_assignees']:
                 if role['is_pingable']:
                     role['role_name'] = "**{}**".format(role['role_name'])
-                to_send = to_send + "- {}\n".format(role['role_name'])
-        em = Embed(title="Roles you are part of", colour=gold, description=to_send)
+                temp_to_send = to_send + \
+                    " - {}\n".format(role['role_name'])
+                if len(temp_to_send) > 2048: # stops going over char limit
+                    em.description = to_send
+                    await ctx.channel.send(embed=em)
+                    em = Embed(colour=gold)
+                    to_send = "- {}\n".format(role['role_name'])
+                else:
+                    to_send = temp_to_send
+        em.description = to_send
         em.set_footer(text=strings['ping']['help'])
         return await ctx.channel.send(embed=em)
 
