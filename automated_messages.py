@@ -23,7 +23,6 @@ async def on_ready():
         for channel in server.channels:
             if channel.id == config['discord']['automated_channel']:
                 found = True
-                await channel.send("Channel found!")
                 break
         if found:
             break
