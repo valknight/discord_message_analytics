@@ -84,47 +84,6 @@ class Admin():
     async def get_enabled_roles(self, ctx):
         await ctx.channel.send(str(config.enabled_roles) + "\n\nCheck this against your roles.txt")
 
-    @commands.command()
-    async def combine_messages(self, ctx):
-        """
-        This is used for migrating to the new system of tracking.
-
-        """
-        cnx = mysql.connector.connect(**config['mysql'])
-        cursor = cnx.cursor(dictionary=True)
-        table_name = self.database_tools.opted_in(user_id=ctx.author.id)
-
-        query_users = "SELECT user_id, username FROM `gssp_logging`.`users` WHERE opted_in = 1"
-        cursor.execute(query_users)
-        users = cursor.fetchall()
-        insert_query = "INSERT INTO `gssp_logging`.`messages_detailed` (`id`, `user_id`, `channel_id`, `time`, `contents`) VALUES (%s, %s, %s, %s, %s);"
-        query = "SELECT * FROM `%s`"
-        drop = "DROP TABLE `gssp_logging`.`%s`;"
-        for user in users:
-            try:
-                cursor.execute(
-                    query, (self.database_tools.opted_in(user_id=user['user_id']),))
-                messages = cursor.fetchall()
-                await ctx.send("Combining " + user['username'])
-                for message in messages:
-                    try:
-                        cursor.execute(insert_query, (
-                            message['id'], user['user_id'], message['channel_id'], message['time'],
-                            message['contents']))
-                    except:
-                        pass
-                cnx.commit()
-                await ctx.send("Inserted %s for %s" % (len(messages), user['username']))
-                try:
-                    cursor.execute(
-                        drop, (self.database_tools.opted_in(user_id=user['user_id']),))
-                except:
-                    pass
-            except:
-                pass
-            cnx.commit()
-        return await ctx.send("Done!")
-
     @is_owner_or_admin()
     @commands.command()
     async def add_role(self, ctx, role_name):
