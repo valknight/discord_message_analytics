@@ -21,7 +21,6 @@ startup_extensions = [
     "gssp_experiments.cogs.fun",
     "gssp_experiments.cogs.ping",
     "gssp_experiments.cogs.unembed"
-#    "gssp_experiments.cogs.automated"
 ]
 
 
