@@ -6,6 +6,7 @@ from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cursor, cnx
+from gssp_experiments.logger import logger
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import strings, config
 from gssp_experiments import colours
@@ -91,7 +92,13 @@ class Controls():
         Command: option to use
         Word: Word to add or remove from blocklist
         """
+        pm_channel = (discord.channel.DMChannel == type(ctx.channel))
+        if not pm_channel:
+            try:
         await ctx.message.delete()
+            except discord.errors.Forbidden:
+                logger.warn(
+                    "Could not delete blacklist command, lacking permissions")
         if command is None:
             return await ctx.send("""
         No subcommand selected - please enter a subcommand for your blocklist.
@@ -111,14 +118,16 @@ class Controls():
             msg = await ctx.send(strings['blocklist']['status']['adding'])
 
             # check if the word is already on the list. throw error if it is
-            if word != blockL:
+            if word.lower() not in blockL:
                 # if its not then add it
-                blockL.append(word)
+                blockL.append(word.lower())
                 # update DB with new list
                 new_json = json.dumps(blockL)
                 cursor.execute(update_blocklist, (new_json, ctx.author.id,))
+
             else:
-                await ctx.send(strings['blocklist']['status']['exist'])
+                await msg.delete?()
+                return await ctx.send(strings['blocklist']['status']['exist'])
 
         elif command == "remove":
             if word is None:
@@ -128,10 +137,9 @@ class Controls():
 
             # try and remove it from list (use a try statement, catching ValueError)
             try:
-                blockL.remove(word)
+                blockL.remove(word.lower())
             except ValueError:
-                return await ctx.send(strings['blocklist']['status']['not_exist'],
-                                      delete_after=config['discord']['delete_timeout'])
+                return await msg.edit(content=strings['blocklist']['status']['not_exist'])
 
             # update DB with new list
             new_json = json.dumps(blockL)
@@ -149,9 +157,8 @@ class Controls():
                     msg += part
                 msg = msg[:-1]  # trim off the trailing ,
             # send a private message with the nice to look at blocklist
-            await ctx.author.send(msg)
-            msg = await ctx.send(strings['blocklist']['status']['complete'],
-                                 delete_after=config['discord']['delete_timeout'])
+            # this prevents the next commands from running
+            return await ctx.author.send(msg)
         else:
             return await ctx.send("""
     No subcommand selected - please enter a subcommand for your blocklist.
@@ -160,7 +167,6 @@ class Controls():
     ?blocklist remove [word] : Remove word from blocklist
     ?blocklist get : Get PM of current blocklist
                 """)
-
         await msg.edit(content=strings['blocklist']['status']['complete'])
 
     @commands.command()
