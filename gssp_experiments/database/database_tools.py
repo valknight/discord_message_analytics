@@ -2,7 +2,7 @@ import json
 
 import mysql.connector.errors
 
-from gssp_experiments.database import cursor, cnx
+from gssp_experiments.database import cursor, cnx, cursor_dict
 from gssp_experiments.logger import logger
 
 add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
@@ -19,8 +19,11 @@ class DatabaseTools():
     def add_message_to_db(self, message):
         from gssp_experiments.client_tools import ClientTools
         self.client_tools = ClientTools(self.client)
-        is_allowed = self.client_tools.channel_allowed(
-            message.channel.id, message.channel, message.channel.is_nsfw())
+        try:
+            is_allowed = self.client_tools.channel_allowed(
+                message.channel.id, message.channel, message.channel.is_nsfw())
+        except AttributeError:
+            is_allowed = False  # in PMs, and other channels, NSFW isn't an option
         if is_allowed:
             try:
                 while True:
@@ -50,6 +53,10 @@ class DatabaseTools():
 
         Returns true if user is opted in, false if not
         """
+        try:
+            cursor.fetchall()  # we do this just to make sure we don't get any erorrs from MySQL later
+        except mysql.connector.errors.InterfaceError:
+            pass
         if user_id is None:
             get_user = "SELECT `opted_in`, `username` FROM `users` WHERE  `username`=%s;"
         else:
@@ -143,3 +150,18 @@ class DatabaseTools():
                 channels.append(result[1])
 
         return messages, channels
+
+    async def get_message_count(self, user_id=None):
+        """
+        Get number of messages sent
+        You can specify user_id to get messages from only one user
+        """
+        if user_id is None:
+            query = "SELECT COUNT(*) as message_count FROM messages_detailed"
+            cursor_dict.execute(query)
+        else:
+            query = "SELECT COUNT(*) as message_count FROM messages_detailed WHERE user_id = %s"
+            cursor_dict.execute(query, (user_id, ))
+        res = cursor_dict.fetchall()[0]
+        print(res)
+        return int(res['message_count'])
