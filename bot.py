@@ -41,6 +41,7 @@ async def on_ready():
     update_channel = "UPDATE `gssp_logging`.`channels` SET `channel_name`=%s WHERE `channel_id`=%s;"
 
     members = []
+
     for guild in client.guilds:
         logger.info("{}: Updating channels".format(str(guild)))
         for channel in guild.text_channels:
@@ -51,14 +52,14 @@ async def on_ready():
                 cursor.execute(update_channel, (channel.name, channel.id))
                 logger.debug("Updated {}".format(channel.name))
             cnx.commit()
+        logger.info("{}: Updating users".format(str(guild)))
         for member in guild.members:
             name = database_tools.opted_in(user_id=member.id)
             if name is not False:
                 members.append(member)
-        logger.info("{}: Updating users".format(str(guild)))
-        for member in guild.members:
             try:
                 cursor.execute(insert_users, (member.id,))
+
             except mysql.connector.errors.IntegrityError:
                 pass  # we pass because we just want to make sure we add any new users, so we expect some already here
             try:
@@ -86,6 +87,7 @@ async def on_ready():
                 role_db.save_members()
         logger.info("{}: Finished {} roles".format(guild, len(guild.roles)))
         cnx.commit()
+    
     # This needs to be here, so that all the other cogs can be loaded
     client.load_extension("gssp_experiments.cogs.loader")
 
