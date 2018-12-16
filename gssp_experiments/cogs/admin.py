@@ -33,11 +33,11 @@ class Admin():
         if user is None:
             user = ctx.author.name
 
-        await ctx.send(strings['process_check']['status']['checking'])
+        msg = await ctx.send(strings['process_check']['status']['checking'])
         if not self.database_tools.opted_in(user=user):
-            return await ctx.send(strings['process_check']['status']['not_opted_in'])
-        await ctx.send(strings['process_check']['status']['opted_in'])
-        return
+            return await msg.edit(content=strings['process_check']['status']['not_opted_in'])
+        return await ctx.edit(content=strings['process_check']['status']['opted_in'])
+
 
     @is_owner_or_admin()
     @commands.command()
@@ -50,7 +50,8 @@ class Admin():
         roles = open("roles.txt", "w")
         roles.write(to_write)
         roles.close()
-        await ctx.channel.send("Done! Check roles.txt")
+        em = discord.Embed(title="Done", description="Check roles.txt")
+        await ctx.channel.send(embed=em)
 
     @is_owner_or_admin()
     @commands.command()
