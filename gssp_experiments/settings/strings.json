@@ -109,6 +109,9 @@
     },
     "ping": {
       "help": "Want to find out how to use the new ping system? Run ?about_pings to find out more!"
+    },
+    "admin": {
+      "extensions_footer": "{} extensions are currently loaded"
     }
   }
 }

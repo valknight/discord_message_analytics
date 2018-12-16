@@ -7,20 +7,20 @@ from discord.ext import commands
 
 from gssp_experiments.checks import is_owner_or_admin
 from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.colours import green, red
+from gssp_experiments.colours import green, red, blue
 from gssp_experiments.settings.config import config, strings
 from gssp_experiments.logger import logger
 startup_extensions = [
-    "gssp_experiments.cogs.admin",
-    "gssp_experiments.cogs.controls",
-    "gssp_experiments.cogs.markov",
-    "gssp_experiments.cogs.sentiment",
-    "gssp_experiments.cogs.slurs",
-    "gssp_experiments.cogs.nyoom",
-    "gssp_experiments.cogs.tagger",
-    "gssp_experiments.cogs.fun",
-    "gssp_experiments.cogs.ping",
-    "gssp_experiments.cogs.unembed"
+    "admin",
+    "controls",
+    "markov",
+    "sentiment",
+    "slurs",
+    "nyoom",
+    "tagger",
+    "fun",
+    "ping",
+    "unembed"
 ]
 
 
@@ -30,17 +30,25 @@ class Loader():
     Don't add to this unless you have to, as this is designed to be minimal so to prevent breaking all cogs
     """
 
+    def get_path(self):
+        return __name__.replace(".loader", "")
+
+    def strip_path(self, extension_name):
+        path = self.get_path() + "."
+        return extension_name.replace(path, "")
+
     def __init__(self, client):
         # self.automated = subprocess.Popen(
         #    [sys.executable, "automated_messages.py"])
         self.client = client
         self.client_tools = ClientTools(client)
         # we look for ".admin" and then add "." to prevent matching a root directory ending in admin
-        path = __name__.replace(".admin", "") + "."
         for extension in startup_extensions:
             try:
-                client.load_extension(extension)
-                logger.info("Loaded {}".format(extension.replace(path, "")))
+                to_load = "{}.{}".format(self.get_path(), extension)
+                client.load_extension(to_load)
+                del(to_load)
+                logger.info("Loaded {}".format(extension))
             except Exception as e:
                 exc = '{}: {}'.format(type(e).__name__, e)
                 logger.error(
@@ -50,15 +58,45 @@ class Loader():
     @commands.command()
     async def unload(self, ctx, extension_name: str):
         """Unloads an extension."""
-        self.client.unload_extension(extension_name)
-        await ctx.send("{} unloaded.".format(extension_name))
+        to_unload = "{}.{}".format(self.get_path(), extension_name)
+        self.client.unload_extension(to_unload)
+        del(to_unload)
+        unloaded = False
+        em = discord.Embed(title="{} was already unloaded".format(
+            extension_name), color=red)
+        try:
+            while True:  # this loop exists as sometimes we may get idiot users load the same cog twice
+                startup_extensions.remove(extension_name)
+                unloaded = True
+        except ValueError:
+            pass
+        if unloaded:
+            em = discord.Embed(title="{} unloaded".format(
+                extension_name), color=green)
+        await ctx.send(embed=em)
 
     @commands.is_owner()
     @commands.command()
     async def load(self, ctx, extension_name: str):
         """Loads an extension. """
-        self.client.load_extension(extension_name)
+        self.client.load_extension(self.get_path() + "." + extension_name)
+        startup_extensions.append(extension_name)
         await ctx.send("{} loaded.".format(extension_name))
+
+    @is_owner_or_admin()
+    @commands.command()
+    async def loaded(self, ctx):
+        """Gets loaded extensions. """
+        self.client
+
+        em = discord.Embed(title="Cogs", color=blue)
+        em.set_footer(text=strings['admin']['extensions_footer'].format(
+            len(startup_extensions)))
+        em.description = ""
+        for extension in startup_extensions:
+            em.description = em.description + \
+                "- {} \n".format(self.strip_path(extension))
+        await ctx.send(embed=em)
 
     @is_owner_or_admin()
     @commands.command()
