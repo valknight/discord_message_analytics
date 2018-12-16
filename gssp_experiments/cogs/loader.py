@@ -55,7 +55,7 @@ class Loader():
                     'Failed to load extension {}\n{}\n{}'.format(extension, exc, traceback.format_exc()))
 
     @commands.is_owner()
-    @commands.command()
+    @commands.command(aliases=["un_load"])
     async def unload(self, ctx, extension_name: str):
         """Unloads an extension."""
         to_unload = "{}.{}".format(self.get_path(), extension_name)
@@ -84,7 +84,7 @@ class Loader():
         await ctx.send("{} loaded.".format(extension_name))
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["get_loaded", "getloadedextensions", "get_loaded_extensions", "getloaded"])
     async def loaded(self, ctx):
         """Gets loaded extensions. """
         self.client
@@ -99,7 +99,7 @@ class Loader():
         await ctx.send(embed=em)
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["re_load"])
     async def reload(self, ctx):
         """Reload all existing cogs"""
         startup_extensions_temp = startup_extensions

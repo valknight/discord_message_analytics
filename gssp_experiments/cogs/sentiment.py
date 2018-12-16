@@ -8,7 +8,7 @@ from gssp_experiments.algorithmia import algo_client
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import config, strings
-
+import gssp_experiments.colours as colours
 
 class Sentiment():
 
@@ -58,7 +58,7 @@ class Sentiment():
                 neutral += tag['neutral']
                 compound += tag['compound']
 
-            em = discord.Embed(title="Sentiment")
+            em = discord.Embed(title="Sentiment", color=colours.blue)
             positive = (math.ceil((positive / len(tags)) * 10000)) / 100
             negative = (math.ceil((negative / len(tags)) * 10000)) / 100
             neutral = (math.ceil((neutral / len(tags)) * 10000)) / 100

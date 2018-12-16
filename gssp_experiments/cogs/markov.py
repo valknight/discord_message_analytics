@@ -3,6 +3,7 @@ import markovify
 from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
+import gssp_experiments.colours as colours
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import strings, config
 
@@ -15,6 +16,9 @@ class Markov():
 
     @commands.command(aliases=["m_s"])
     async def markov_server(self, ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
+        """
+        Generates markov output based on entire server's messages.
+        """
         nsfw_mismatch = False
         if selected_channel is not None:
             if selected_channel.is_nsfw() and not nsfw:
@@ -22,11 +26,7 @@ class Markov():
             elif not selected_channel.is_nsfw() and nsfw:
                 nsfw_mismatch = True
         if nsfw_mismatch:
-            return await ctx.send(
-                "The selected channel and the NSFW flag do not match. Please ensure these are both correct.")
-        """
-        Generates markov output based on entire server's messages.
-        """
+            return await ctx.send(embed=discord.Embed(title="Error", description="The selected channel and the NSFW flag do not match. Please ensure these are both correct.", color=colours.red))
         output = await ctx.send(strings['markov']['title'] + strings['emojis']['loading'])
         await output.edit(content=output.content + "\n" + strings['markov']['status']['messages'])
         async with ctx.channel.typing():

@@ -7,7 +7,7 @@ from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.settings.config import strings, config
-
+from gssp_experiments import colours
 
 class Nyoom():
 
@@ -80,18 +80,30 @@ class Nyoom():
             return await output.edit(content=output.content + '\n' + strings['nyoom_calc']['status']['not_opted_in'])
         # grab a list of times that user has posted
         totalM, totalT, nyoom_metric = await self.calculate_nyoom(output, user_id=user.id)
-        return await output.edit(
-            content=strings['nyoom_calc']['status']['finished'].format(username, totalM, totalT, nyoom_metric))
+        await output.delete()
+        embed = discord.Embed(title="Nyoom metrics", color=colours.blue)
+        embed.add_field(name="Message count", value=totalM)
+        embed.add_field(name="Total hours", value=totalT)
+        embed.add_field(name="Nyoom metric", value=nyoom_metric)
+        embed.set_footer(text="These values may not be 100% accurate")
+        return await ctx.send(embed=embed)
 
-    @commands.command()
+    @commands.command(aliases=["nyoomserver", "ns", "n_s"])
     async def nyoom_server(self, ctx):
         """
         Calculate nyoom metric for entire server
         """
         output = await ctx.send(strings['nyoom_calc']['status']['calculating'] + strings['emojis']['loading'])
         totalM, totalT, nyoom_metric = await self.calculate_nyoom(output)
-        return await output.edit(
-            content=strings['nyoom_calc']['status']['finished'].format("GSSP", totalM, totalT, nyoom_metric))
+
+        # prepare the final embed to send
+        embed = discord.Embed(title="Nyoom metrics", color=colours.blue)
+        embed.add_field(name="Message count", value=totalM)
+        embed.add_field(name="Total hours", value=totalT)
+        embed.add_field(name="Nyoom metric", value=nyoom_metric)
+        embed.set_footer(text="These values may not be 100% accurate")
+        await output.delete()
+        return await ctx.send(embed=embed)
 
 
 def setup(client):

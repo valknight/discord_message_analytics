@@ -17,7 +17,7 @@ class Tagger():
     @commands.command(aliases=["t"])
     async def tagger(self, ctx, nsfw: bool = False, selected_channel: discord.TextChannel = None):
         """
-        Generates tags for user who ran this command
+        Generates tags for you based on what you talk about
         """
         if (not ctx.message.channel.is_nsfw()) and nsfw:
             return await ctx.send(strings['tagger']['errors']['nsfw'].format(str(ctx.author)))

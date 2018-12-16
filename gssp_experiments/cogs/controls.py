@@ -29,10 +29,10 @@ class Controls():
         self.database_tools = DatabaseTools(client)
         self.client_tools = ClientTools(client)
 
-    @commands.command()
+    @commands.command(aliases=["optin", "opt_in"])
     async def experiments(self, ctx):
         """
-        Opt into experiments
+        Opt into data analysis and experiments.
         """
         message = ctx.message
         channel = message.channel
@@ -60,30 +60,30 @@ class Controls():
         await self.client_tools.build_data_profile([author])
         await channel.send(strings['data_collection']['complete'].format(author.name))
 
-    @commands.command()
+    @commands.command(aliases=["opt_in_automated", "optinautomated"])
     async def automated(self, ctx):
         """
         Opt in to automated messages. Run this again to opt out.
         """
         if not self.database_tools.opted_in(user_id=ctx.author.id):
-            return await ctx.channel.send(strings['tagger']['errors']['not_opted_in'])
+            return await ctx.channel.send(embed=discord.Embed(title="Error", description=strings['tagger']['errors']['not_opted_in'], color=colours.red))
 
         if self.database_tools.is_automated(ctx.author):
             output = await ctx.channel.send("Opting you out of automation.")
             query = "UPDATE `users` SET `automate_opted_in`=b'0' WHERE `user_id`=%s;"
             cursor.execute(query, (ctx.author.id,))
             cnx.commit()
-            return await output.edit(
-                content='Opted out - you will be removed from the pool on the next refresh (IE: when the bot goes back around in a loop again)')
-
+            await output.delete()
+            return await ctx.channel.send(embed=discor.Embed(title="Success", description='You will be removed from the pool on the next refresh (IE: when the bot goes back around in a loop again)'))
         else:
             output = await ctx.channel.send("Opting you into automation")
             query = "UPDATE`users` SET `automate_opted_in`=b'1' WHERE `user_id`=%s;"
             cursor.execute(query, (ctx.author.id,))
             cnx.commit()
-            return await output.edit(content='Opted in!')
+            await output.delete()
+            return await ctx.channel.send(embed=discord.Embed(title="Success", description='Opted in!', color=colours.green))
 
-    @commands.command()
+    @commands.command(aliases=["blacklist", "block_list", "black_list"])
     async def blocklist(self, ctx, command=None, word=None):
         """
         Prevents words from being shown publicly through methods such as markov and markov_server.
@@ -169,7 +169,7 @@ class Controls():
                 """)
         await msg.edit(content=strings['blocklist']['status']['complete'])
 
-    @commands.command()
+    @commands.command(aliases=["opt_out"])
     async def optout(self, ctx):
         """
         Run this to optout of experiments, and delete your data
@@ -182,8 +182,9 @@ class Controls():
                            description=strings['data_collection']['opt_out_finish_message'], color=colours.green)
         await current_embed.edit(embed=em)
 
-    @commands.command()
+    @commands.command(aliases=["datainfo", "data", "aboutme", "mydata", "my_data", "about_me"])
     async def data_info(self, ctx):
+        """Returns the data we store on you."""
         async with ctx.channel.typing():
             username = self.database_tools.opted_in(user_id=ctx.author.id)
             if not username:

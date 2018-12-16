@@ -18,19 +18,19 @@ class Slurs():
     @is_owner_or_admin()
     @commands.command(aliases=["slurs", "getslurs"])
     async def get_slurs(self, ctx):
-        """Get the global flag list"""
+        """Get the global slur list"""
         with open("gssp_experiments/data/bad_words.json") as bad_words_f:
             bad_words = json.loads(bad_words_f.read())
         em = discord.Embed(title="Slurs", description = "")
         for word in bad_words:
             em.description = em.description + "- {}\n".format(word)
         await ctx.author.send(embed=em)
-        await ctx.channel.send(":e_mail: Sent!")
+        await ctx.channel.send(embed=discord.Embed(title="Success", description=":e_mail: Sent to your DMs!", color=green))
 
     @is_owner_or_admin()
-    @commands.command(aliases="addslur")
+    @commands.command(aliases=["addslur"])
     async def add_slur(self, ctx, slur):
-        """Add a slur to the global flag list"""
+        """Add a slur to the global slur list"""
         await ctx.message.delete()
         with open("gssp_experiments/data/bad_words.json", 'r') as slur_f:
             slurs = json.loads(slur_f.read())
@@ -40,10 +40,10 @@ class Slurs():
         with open("gssp_experiments/data/bad_words.json", 'w') as slur_f:
             slur_f.write(json.dumps(slurs, indent=4))
 
-        await ctx.channel.send(embed=discord.Embed(title="Added slur", color=green))
+        await ctx.channel.send(embed=discord.Embed(title="Success", description="Added slur", color=green))
 
     @is_owner_or_admin()
-    @commands.command(aliases="removeslur")
+    @commands.command(aliases=["removeslur"])
     async def remove_slur(self, ctx, slur):
         """Remove a slur from the global flag list"""
         await ctx.message.delete()
@@ -53,12 +53,12 @@ class Slurs():
         if slur.lower() in slurs:
             slurs.remove(slur.lower())
         else:
-            return await ctx.channel.send(embed=discord.Embed(title="Slur does not exist", color=red))
+            return await ctx.channel.send(embed=discord.Embed(title="Error", description="Slur does not exist", color=red))
         slur_json = json.dumps(slurs, indent=4)
         file = open("gssp_experiments/data/bad_words.json", "w")
         file.write(slur_json)
         file.close()
-        await ctx.channel.send(embed=discord.Embed(title="Removed slur", color=green))
+        await ctx.channel.send(embed=discord.Embed(title="Success", description="Removed slur", color=green))
 
 
 def setup(client):

@@ -25,7 +25,7 @@ class Admin():
         self.client_tools = ClientTools(client)
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["isprocessed", "processed"])
     async def is_processed(self, ctx, user=None):
         """
         Admin command used to check if a member has opted in
@@ -40,8 +40,11 @@ class Admin():
 
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["dumproles"])
     async def dump_roles(self, ctx):
+        """
+        Dump all roles to a text file on the host
+        """
         to_write = ""
         for guild in self.bot.guilds:
             to_write += "\n\n=== {} ===\n\n".format(str(guild))
@@ -54,41 +57,40 @@ class Admin():
         await ctx.channel.send(embed=em)
 
     @is_owner_or_admin()
-    @commands.command()
-    async def get_enabled_roles(self, ctx):
-        await ctx.channel.send(str(config.enabled_roles) + "\n\nCheck this against your roles.txt")
-
-    @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["addrole"])
     async def add_role(self, ctx, role_name):
         """Add a role. Note: by default, it isn't joinable"""
         role_check = get_role(role_name)
+        em = discord.Embed(title="Success", description="Created role {}".format(role_name), color=green)
         if role_check is not None:
-            return await ctx.channel.send("**FAIL**: Role already exists in DB.")
-        query = "INSERT INTO `gssp`.`roles` (`role_name`) VALUES (%s);"
-        cursor.execute(query, (role_name,))
-        cnx.commit()
-        return await ctx.channel.send("**SUCCESS** : Created role {}".format(role_name))
+            em = discord.Embed(title="Error", description="Role is already in the DB", color=red)
+        else:
+            query = "INSERT INTO `gssp`.`roles` (`role_name`) VALUES (%s);"
+            cursor.execute(query, (role_name,))
+            cnx.commit()
+        return await ctx.channel.send(embed=em)
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["deleterole", "remove_role", "removerole"])
     async def delete_role(self, ctx, role_name):
         """Deletes a role - cannot be undone!"""
         role_check = get_role(role_name)
+        em = discord.Embed(title="Success", description="Deleted role {}".format(role_name), color=green)
         if role_check is None:
-            return await ctx.channel.send("**FAIL**: Role does not exist in DB.")
-        query = "DELETE FROM `gssp`.`roles` WHERE `role_name` = %s;"
-        cursor.execute(query, (role_name,))
-        cnx.commit()
-        return await ctx.channel.send("**SUCCESS** : Deleted role {}".format(role_name))
+            em = discord.Embed(title="Error", description="{} is not in the DB".format(role_name), color=red)
+        else:
+            query = "DELETE FROM `gssp`.`roles` WHERE `role_name` = %s;"
+            cursor.execute(query, (role_name,))
+            cnx.commit()
+        return await ctx.channel.send(embed=em)
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["toggleping", "switchping", "toggle_ping", "switch_ping", "togglepingable"])
     async def toggle_pingable(self, ctx, role_name):
         """Change a role from not pingable to pingable or vice versa"""
         role = get_role(role_name)
         if role is None:
-            return await ctx.channel.send("Could not find that role!")
+            return await ctx.channel.send(embed=discord.Embed(title='Error', description='Could not find that role', color=red))
         if role['is_pingable'] == 1:
             update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='0' WHERE `role_id`=%s;"
             text = "not pingable"
@@ -96,19 +98,19 @@ class Admin():
             update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='1' WHERE `role_id`=%s;"
             text = "pingable"
         cursor.execute(update_query, (role['role_id'],))
-        await ctx.channel.send("**SUCCESS** : Set {} ({}) to {}".format(role['role_name'], role['role_id'], text))
-
         cnx.commit()
+        await ctx.channel.send(embed=discord.Embed(title="SUCCESS", description="Set {} ({}) to {}".format(role['role_name'], role['role_id'], text), color=green))
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["togglejoinable", "togglejoin", "toggle_join"])
     async def toggle_joinable(self, ctx, role_name):
         """
         Toggles whether a role is joinable
         """
         role = get_role(role_name)
         if role is None:
-            return await ctx.channel.send("Could not find that role!")
+            em = discord.Embed(title="Error", description = "Could not find role {}".format(role_name), color=red)
+            return await ctx.channel.send(embed=em)
         if role['is_joinable'] == 1:
             update_query = "UPDATE `gssp`.`roles` SET `is_joinable`='0' WHERE `role_id`=%s;"
             text = "not joinable"
@@ -116,13 +118,17 @@ class Admin():
             update_query = "UPDATE `gssp`.`roles` SET `is_joinable`='1' WHERE `role_id`=%s;"
             text = "joinable"
         cursor.execute(update_query, (role['role_id'],))
-        await ctx.channel.send("**SUCCESS** : Set {} ({}) to {}".format(role['role_name'], role['role_id'], text))
-
+        em = discord.Embed(title="Success", description="Set {} ({} to {}".format(role['role_name'], role['role_id'], text), color=green)
         cnx.commit()
 
+        await ctx.channel.send(embed=em)
+
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["resyncroles", "syncroles", "rolesync", "role_sync", "sync_roles"])
     async def resync_roles(self, ctx):
+        """
+        Force refresh the roles in the database with the roles discord has.
+        """
         for guild in self.client.guilds:
             for role in guild.roles:
                 if role.name != "@everyone":
@@ -140,6 +146,7 @@ class Admin():
                     role_db.save_members()
                     cursor.execute(
                         update_role, (emoji.demojize(role.name), role.id))
+        await ctx.send(embed=discord.Embed(title="Success", description="Resynced roles.", color=green))
 
 
 def setup(client):

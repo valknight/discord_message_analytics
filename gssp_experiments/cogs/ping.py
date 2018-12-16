@@ -3,7 +3,7 @@ from discord import Embed
 from discord.ext import commands
 
 from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.colours import gold
+from gssp_experiments.colours import gold, green, red
 from gssp_experiments.database import cnx, cursor_dict as cursor
 from gssp_experiments.database.database_tools import DatabaseTools
 from gssp_experiments.role_c import DbRole
@@ -18,9 +18,9 @@ class Ping():
         self.client_extras = ClientTools(client)
         self.database_extras = DatabaseTools(self.client_extras)
 
-    @commands.command()
+    @commands.command(aliases=["toggle_ping_public", "togglepublicping", "togglepingpublic"])
     async def toggle_public_ping(self, ctx):
-
+        """Toggle whether you are pinged publicly or in private over direct message"""
         user_settings = get_user(ctx.author.id)
 
         if user_settings['ping_public'] == 1:
@@ -32,10 +32,11 @@ class Ping():
 
         cursor.execute(query, (ctx.author.id,))
         cnx.commit()
-        await ctx.channel.send("**SUCCESS** : " + return_msg)
+        await ctx.channel.send(embed=discord.Embed(title="Success", description=return_msg, color=green))
 
-    @commands.command()
+    @commands.command(aliases=["toggle_ping_offline", "toggleofflineping"])
     async def toggle_offline_ping(self, ctx):
+        """Toggle whether or not you should recieve pings while offline"""
         user_settings = get_user(ctx.author.id)
 
         if user_settings['ping_online_only'] == 1:
@@ -47,11 +48,11 @@ class Ping():
 
         cursor.execute(query, (ctx.author.id,))
         cnx.commit()
-        await ctx.channel.send("**SUCCESS** : " + return_msg)
+        await ctx.channel.send(embed=discord.Embed(title="Success", description=return_msg, color=green))
 
     @commands.command()
     async def get_settings(self, ctx):
-        await ctx.channel.send(str(get_user(ctx.author.id)))
+        await ctx.channel.send(embed=discord.Embed(title="User settings", description="```{}```".format(str(get_user(ctx.author.id)))))
 
     @commands.command()
     async def ping(self, ctx, role_name):
@@ -62,7 +63,7 @@ class Ping():
         """
         role = get_role(role_name)
         if role is None:
-            return await ctx.channel.send("**FAIL** : Cannot find that role.")
+            return await ctx.channel.send(embed=discord.Embed(title="Fail", description="Cannot find that role.", color=red))
         if role['is_pingable']:
             public_message = ""
             for member in role['members']:
@@ -89,15 +90,15 @@ class Ping():
                         em.set_footer(text=strings['ping']['help'])
                         await user_discord.send(embed=em)
             if public_message == "":
-                return await ctx.channel.send("All users have been pinged privately with the message.")
+                return await ctx.channel.send(embed=discord.Embed(title="Sent!", description="All users have been pinged privately with the message.", color=green))
             else:
                 return await ctx.channel.send(
-                    public_message + "\n\n Message: {} \n **Author:** {}".format(str(ctx.message.content),
-                                                                                 str(ctx.author)))
+                    public_message + "\n\n **Message**: {} \n **Author:** {}".format(str(ctx.message.content),
+                                                                                 str(ctx.author.mention)))
         else:
             return await ctx.channel.send("**FAIL** : Role not pingable")
 
-    @commands.command()
+    @commands.command(aliases=["join", "joinrole"])
     async def join_role(self, ctx, role_name):
         """Join a ping group / role given a name"""
         role = get_role(role_name)
@@ -118,7 +119,7 @@ class Ping():
         updated_role.save_members()
         return await ctx.channel.send("**SUCCESS** : You have now joined {}".format(role['role_name']))
 
-    @commands.command()
+    @commands.command(aliases=["leave", "leaverole"])
     async def leave_role(self, ctx, role_name):
         """Join a ping group / role given a name"""
         role = get_role(role_name)
@@ -134,8 +135,9 @@ class Ping():
         updated_role.save_members()
         return await ctx.channel.send("**SUCCESS** : You have now left {}".format(role['role_name']))
 
-    @commands.command()
+    @commands.command(aliases=["allroles", "all_roles"])
     async def roles(self, ctx):
+        """Get all possible roles, and how to ping them"""
         roles = get_roles()
         to_send = ""
         for role in roles:
@@ -147,8 +149,9 @@ class Ping():
         em.set_footer(text=strings['ping']['help'])
         return await ctx.channel.send(embed=em)
 
-    @commands.command()
+    @commands.command(aliases=["pinghelp", "ping_help", "aboutpings"])
     async def about_pings(self, ctx):
+        """Get help on how to use pings"""
         prefix = config['discord']['prefix']
         message = """
 Hi there! You've probably had this command given to you to explain how the new ping system works. Below are some quick guides on how to use this new system.
