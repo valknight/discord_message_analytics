@@ -33,7 +33,6 @@ async def on_ready():
             if database_tools.is_automated(user):
                 opted_in_users.append(user)
         for user in opted_in_users:
-            output = await channel.send("Generating message for " + user.display_name)
             messages, channels = await database_tools.get_messages(user.id, config['limit'])
             cnx.commit()
             text_full = ""
@@ -57,8 +56,7 @@ async def on_ready():
                     break
                 await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
             except KeyError:
-                await output.delete()
-                await channel.send("Could not create markov for " + user.display_name)
+                pass
 
 
 async def delete_option(bot, message, channel, delete_emoji, timeout=config['discord']['delete_timeout'] / 2):
@@ -73,7 +71,8 @@ async def delete_option(bot, message, channel, delete_emoji, timeout=config['dis
         await bot.wait_for("reaction_add", timeout=timeout, check=check)
         await bot.wait_for("reaction_add", timeout=timeout, check=check)
         await message.delete()
-        return await channel.send("Message deleted.")
+        em = Embed(title="Message deleted.")
+        return await channel.send(embed=em)
     except concurrent.futures._base.TimeoutError:
         try:
             await message.remove_reaction(delete_emoji, bot.user)
