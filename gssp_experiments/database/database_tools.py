@@ -8,8 +8,8 @@ from gssp_experiments.logger import logger
 add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
 insert_users = "INSERT INTO `gssp`.`users` (`user_id`) VALUES (%s);"
 insert_settings = "INSERT INTO `gssp`.`ping_settings` (`user_id`) VALUES (%s);"
-insert_role = "INSERT INTO `gssp`.`roles` (`role_id`, `role_name`) VALUES (%s, %s);"
-update_role = "UPDATE `gssp`.`roles` SET `role_name`=%s WHERE `role_id`=%s;"
+insert_role = "INSERT INTO `gssp`.`roles` (`role_id`, `role_name`, `guild_id`) VALUES (%s, %s, %s);"
+update_role = "UPDATE `gssp`.`roles` SET `role_name`=%s WHERE `role_id`=%s;" # we don't have guild_id here, as this doesn't change.
 
 
 class DatabaseTools():

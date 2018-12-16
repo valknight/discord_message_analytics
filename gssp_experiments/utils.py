@@ -3,10 +3,10 @@ import json
 from gssp_experiments.database import cnx, cursor_dict as cursor
 
 
-def get_role(role_name):
+def get_role(guild_id, role_name):
     cnx.commit()
-    query = "SELECT * FROM `gssp`.`roles` WHERE `role_name` = %s"
-    cursor.execute(query, (role_name,))
+    query = "SELECT * FROM `gssp`.`roles` WHERE `role_name` = %s AND `guild_id` = %s"
+    cursor.execute(query, (role_name, guild_id))
     members = []
     try:
         a = cursor.fetchall()[0]
@@ -16,11 +16,15 @@ def get_role(role_name):
     a['members'] = members
     return a
 
-def get_roles():
+def get_roles(guild_id, limit_to_joinable=True):
     cnx.commit()
-    query = "SELECT * FROM `gssp`.`roles` WHERE `is_joinable` = 1"
-    cursor.execute(query)
+    if limit_to_joinable:
+        query = "SELECT * FROM `gssp`.`roles` WHERE `guild_id` = %s AND `is_joinable` = 1"
+    else:
+        query = "SELECT * FROM `gssp`.`roles` WHERE `guild_id` = %s"
+    cursor.execute(query, (guild_id, ))
     return cursor.fetchall()
+
 
 
 def get_user(user_id):

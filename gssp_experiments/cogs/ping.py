@@ -61,7 +61,7 @@ class Ping():
 
         To find out more about how the bot based roles work, run the command ?about_pings
         """
-        role = get_role(role_name)
+        role = get_role(ctx.guild.id, role_name)
         if role is None:
             return await ctx.channel.send(embed=discord.Embed(title="Fail", description="Cannot find that role.", color=red))
         if role['is_pingable']:
@@ -101,7 +101,7 @@ class Ping():
     @commands.command(aliases=["join", "joinrole"])
     async def join_role(self, ctx, role_name):
         """Join a ping group / role given a name"""
-        role = get_role(role_name)
+        role = get_role(ctx.guild.id, role_name)
         try:
             if not role['is_joinable']:
                 return await ctx.channel.send("**FAIL** : This role cannot currently be joined.")
@@ -122,7 +122,7 @@ class Ping():
     @commands.command(aliases=["leave", "leaverole"])
     async def leave_role(self, ctx, role_name):
         """Join a ping group / role given a name"""
-        role = get_role(role_name)
+        role = get_role(ctx.guild.id, role_name)
 
         cur_members = role['members']
 
@@ -138,7 +138,7 @@ class Ping():
     @commands.command(aliases=["allroles", "all_roles"])
     async def roles(self, ctx):
         """Get all possible roles, and how to ping them"""
-        roles = get_roles()
+        roles = get_roles(ctx.guild.id)
         to_send = ""
         for role in roles:
             to_send = to_send + \
@@ -146,6 +146,17 @@ class Ping():
                                             ['prefix'], role['role_name'])
         em = Embed(title="Premade commands to ping every enabled role",
                    colour=gold, description=to_send)
+        em.set_footer(text=strings['ping']['help'])
+        return await ctx.channel.send(embed=em)
+
+    @commands.command(aliases=["myroles", "joinedroles", "joined_roles"])
+    async def my_roles(self, ctx):
+        roles = get_roles(ctx.guild.id, limit_to_joinable=False)
+        to_send = ""
+        for role in roles:
+            if str(ctx.author.id) in role['role_assignees']:
+                to_send = to_send + "- {}\n".format(role['role_name'])
+        em = Embed(title="Roles you are part of", colour=gold, description=to_send)
         em.set_footer(text=strings['ping']['help'])
         return await ctx.channel.send(embed=em)
 

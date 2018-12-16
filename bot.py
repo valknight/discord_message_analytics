@@ -75,7 +75,7 @@ async def on_ready():
                 if role.name != "@everyone":
                     try:
                         cursor.execute(
-                            insert_role, (role.id, emoji.demojize(role.name)))
+                            insert_role, (role.id, emoji.demojize(role.name), guild.id))
                     except mysql.connector.errors.IntegrityError:
                         cursor.execute(
                             update_role, (emoji.demojize(role.name), role.id))

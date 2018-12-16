@@ -60,13 +60,13 @@ class Admin():
     @commands.command(aliases=["addrole"])
     async def add_role(self, ctx, role_name):
         """Add a role. Note: by default, it isn't joinable"""
-        role_check = get_role(role_name)
+        role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(title="Success", description="Created role {}".format(role_name), color=green)
         if role_check is not None:
             em = discord.Embed(title="Error", description="Role is already in the DB", color=red)
         else:
-            query = "INSERT INTO `gssp`.`roles` (`role_name`) VALUES (%s);"
-            cursor.execute(query, (role_name,))
+            query = "INSERT INTO `gssp`.`roles` (`role_name`, `guild_id`) VALUES (%s, %s);"
+            cursor.execute(query, (role_name, ctx.guild.id))
             cnx.commit()
         return await ctx.channel.send(embed=em)
 
@@ -74,13 +74,13 @@ class Admin():
     @commands.command(aliases=["deleterole", "remove_role", "removerole"])
     async def delete_role(self, ctx, role_name):
         """Deletes a role - cannot be undone!"""
-        role_check = get_role(role_name)
+        role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(title="Success", description="Deleted role {}".format(role_name), color=green)
         if role_check is None:
             em = discord.Embed(title="Error", description="{} is not in the DB".format(role_name), color=red)
         else:
-            query = "DELETE FROM `gssp`.`roles` WHERE `role_name` = %s;"
-            cursor.execute(query, (role_name,))
+            query = "DELETE FROM `gssp`.`roles` WHERE `role_name` = %s; AND `guild_id` = %s"
+            cursor.execute(query, (role_name, ctx.guild.id))
             cnx.commit()
         return await ctx.channel.send(embed=em)
 
@@ -88,16 +88,16 @@ class Admin():
     @commands.command(aliases=["toggleping", "switchping", "toggle_ping", "switch_ping", "togglepingable"])
     async def toggle_pingable(self, ctx, role_name):
         """Change a role from not pingable to pingable or vice versa"""
-        role = get_role(role_name)
+        role = get_role(ctx.guild.id, role_name)
         if role is None:
             return await ctx.channel.send(embed=discord.Embed(title='Error', description='Could not find that role', color=red))
         if role['is_pingable'] == 1:
-            update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='0' WHERE `role_id`=%s;"
+            update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='0' WHERE `role_id`=%s AND `guild_id` = %s;"
             text = "not pingable"
         else:
-            update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='1' WHERE `role_id`=%s;"
+            update_query = "UPDATE `gssp`.`roles` SET `is_pingable`='1' WHERE `role_id`=%s AND `guild_id` = %s;"
             text = "pingable"
-        cursor.execute(update_query, (role['role_id'],))
+        cursor.execute(update_query, (role['role_id'], ctx.guild.id, ))
         cnx.commit()
         await ctx.channel.send(embed=discord.Embed(title="SUCCESS", description="Set {} ({}) to {}".format(role['role_name'], role['role_id'], text), color=green))
 
@@ -107,7 +107,7 @@ class Admin():
         """
         Toggles whether a role is joinable
         """
-        role = get_role(role_name)
+        role = get_role(ctx.guild.id, role_name)
         if role is None:
             em = discord.Embed(title="Error", description = "Could not find role {}".format(role_name), color=red)
             return await ctx.channel.send(embed=em)

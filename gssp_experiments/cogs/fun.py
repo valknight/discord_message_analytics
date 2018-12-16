@@ -8,9 +8,6 @@ class Fun():
     def __init__(self, client):
         self.client = client
 
-    async def ping(self, ctx):
-        return ctx.send("Pong!")
-
 
 def setup(client):
     client.add_cog(Fun(client))
