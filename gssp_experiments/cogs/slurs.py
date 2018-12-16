@@ -16,7 +16,7 @@ class Slurs():
         self.client_tools = ClientTools(client)
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases=["slurs", "getslurs"])
     async def get_slurs(self, ctx):
         """Get the global flag list"""
         with open("gssp_experiments/data/bad_words.json") as bad_words_f:
@@ -28,7 +28,7 @@ class Slurs():
         await ctx.channel.send(":e_mail: Sent!")
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases="addslur")
     async def add_slur(self, ctx, slur):
         """Add a slur to the global flag list"""
         await ctx.message.delete()
@@ -43,7 +43,7 @@ class Slurs():
         await ctx.channel.send(embed=discord.Embed(title="Added slur", color=green))
 
     @is_owner_or_admin()
-    @commands.command()
+    @commands.command(aliases="removeslur")
     async def remove_slur(self, ctx, slur):
         """Remove a slur from the global flag list"""
         await ctx.message.delete()
