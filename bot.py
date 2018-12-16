@@ -41,53 +41,56 @@ async def on_ready():
     update_channel = "UPDATE `gssp_logging`.`channels` SET `channel_name`=%s WHERE `channel_id`=%s;"
 
     members = []
-
-    for guild in client.guilds:
-        logger.info("{}: Updating channels".format(str(guild)))
-        for channel in guild.text_channels:
-            try:
-                cursor.execute(insert_channel, (channel.id, channel.name))
-                logger.debug("Inserted {} to DB".format(channel.name))
-            except mysql.connector.errors.IntegrityError:
-                cursor.execute(update_channel, (channel.name, channel.id))
-                logger.debug("Updated {}".format(channel.name))
-            cnx.commit()
-        logger.info("{}: Updating users".format(str(guild)))
-        for member in guild.members:
-            name = database_tools.opted_in(user_id=member.id)
-            if name is not False:
-                members.append(member)
-            try:
-                cursor.execute(insert_users, (member.id,))
-
-            except mysql.connector.errors.IntegrityError:
-                pass  # we pass because we just want to make sure we add any new users, so we expect some already here
-            try:
-                cursor.execute(insert_settings, (member.id,))
-            except mysql.connector.errors.IntegrityError:
-                pass  # see above
-        logger.info("{}: Finished {} users".format(
-            str(guild), len(guild.members)))
-        logger.info("{}: Updating roles".format(str(guild)))
-        for role in guild.roles:
-            if role.name != "@everyone":
+    if not bool(config['discord'].get("skip_scrape")):
+        for guild in client.guilds:
+            logger.info("{}: Updating channels".format(str(guild)))
+            for channel in guild.text_channels:
                 try:
-                    cursor.execute(
-                        insert_role, (role.id, emoji.demojize(role.name)))
+                    cursor.execute(insert_channel, (channel.id, channel.name))
+                    logger.debug("Inserted {} to DB".format(channel.name))
                 except mysql.connector.errors.IntegrityError:
-                    cursor.execute(
-                        update_role, (emoji.demojize(role.name), role.id))
+                    cursor.execute(update_channel, (channel.name, channel.id))
+                    logger.debug("Updated {}".format(channel.name))
+                cnx.commit()
+            logger.info("{}: Updating users".format(str(guild)))
+            for member in guild.members:
+                name = database_tools.opted_in(user_id=member.id)
+                if name is not False:
+                    members.append(member)
+                try:
+                    cursor.execute(insert_users, (member.id,))
 
-                # this is designed to assist with migration, by moving old discord role members over to the new
-                # system seamlessly
-                member_ids = []
-                for member in role.members:
-                    member_ids.append(member.id)
-                role_db = DbRole(role.id, role.name, 0, members=member_ids)
-                role_db.save_members()
-        logger.info("{}: Finished {} roles".format(guild, len(guild.roles)))
-        cnx.commit()
-    
+                except mysql.connector.errors.IntegrityError:
+                    pass  # we pass because we just want to make sure we add any new users, so we expect some already here
+                try:
+                    cursor.execute(insert_settings, (member.id,))
+                except mysql.connector.errors.IntegrityError:
+                    pass  # see above
+            logger.info("{}: Finished {} users".format(
+                str(guild), len(guild.members)))
+            logger.info("{}: Updating roles".format(str(guild)))
+            for role in guild.roles:
+                if role.name != "@everyone":
+                    try:
+                        cursor.execute(
+                            insert_role, (role.id, emoji.demojize(role.name)))
+                    except mysql.connector.errors.IntegrityError:
+                        cursor.execute(
+                            update_role, (emoji.demojize(role.name), role.id))
+
+                    # this is designed to assist with migration, by moving old discord role members over to the new
+                    # system seamlessly
+                    member_ids = []
+                    for member in role.members:
+                        member_ids.append(member.id)
+                    role_db = DbRole(role.id, role.name, 0, members=member_ids)
+                    role_db.save_members()
+            logger.info("{}: Finished {} roles".format(
+                guild, len(guild.roles)))
+            cnx.commit()
+    else:
+        logger.warn(
+            "Skipping scraping data from existing servers - data may be out of date")
     # This needs to be here, so that all the other cogs can be loaded
     client.load_extension("gssp_experiments.cogs.loader")
 
