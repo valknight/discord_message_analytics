@@ -36,7 +36,8 @@ token = config['discord']['token']
 
 @client.event
 async def on_ready():
-    await set_activity(client)
+    game = discord.Game("Starting")
+    await client.change_presence(activity=game)
     logger.info("Bot starting. Please wait for synchronization to complete.")
 
     insert_channel = "INSERT INTO channels (channel_id, channel_name) VALUES (%s, %s)"
@@ -93,7 +94,7 @@ async def on_ready():
             "Skipping scraping data from existing servers - data may be out of date")
     # This needs to be here, so that all the other cogs can be loaded
     client.load_extension("gssp_experiments.cogs.loader")
-
+    set_activity(client)
     logger.info("\n[Connected to Discord]\n[Username]  -   [ {} ]\n[User  ID]  -   [ {} ]".format(
         client.user.name, client.user.id))
 
