@@ -27,13 +27,14 @@ class Slurs():
     async def add_slur(self, ctx, slur):
         """Add a slur to the global flag list"""
         await ctx.message.delete()
-        file = open("gssp_experiments/data/bad_words.json", 'r')
-        slurs = json.loads(file.read())
+        with open("gssp_experiments/data/bad_words.json", 'r') as slur_f:
+            slurs = json.loads(slur_f.read())
+
         slurs.append(slur.lower())
-        file.close()
-        file = open("gssp_experiments/data/bad_words.json", 'w')
-        file.write(json.dumps(slurs))
-        file.close()
+
+        with open("gssp_experiments/data/bad_words.json", 'w') as slur_f:
+            slur_f.write(json.dumps(slurs, indent=4))
+
         await ctx.channel.send(embed=discord.Embed(title="Added slur", color=green))
 
     @is_owner_or_admin()
@@ -41,14 +42,14 @@ class Slurs():
     async def remove_slur(self, ctx, slur):
         """Remove a slur from the global flag list"""
         await ctx.message.delete()
-        file = open("gssp_experiments/data/bad_words.json", 'r')
-        slurs = json.loads(file.read())
+        with open("gssp_experiments/data/bad_words.json", 'r') as existing_words:
+            slurs = json.loads(existing_words.read())
+
         if slur.lower() in slurs:
             slurs.remove(slur.lower())
         else:
             return await ctx.channel.send(embed=discord.Embed(title="Slur does not exist", color=red))
-        slur_json = json.dumps(slurs)
-        file.close()
+        slur_json = json.dumps(slurs, indent=4)
         file = open("gssp_experiments/data/bad_words.json", "w")
         file.write(slur_json)
         file.close()
