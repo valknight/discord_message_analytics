@@ -19,7 +19,12 @@ class Slurs():
     @commands.command()
     async def get_slurs(self, ctx):
         """Get the global flag list"""
-        await ctx.author.send("***Slurs:***\n```" + open("gssp_experiments/data/bad_words.json").read() + "```")
+        with open("gssp_experiments/data/bad_words.json") as bad_words_f:
+            bad_words = json.loads(bad_words_f.read())
+        em = discord.Embed(title="Slurs", description = "")
+        for word in bad_words:
+            em.description = em.description + "- {}\n".format(word)
+        await ctx.author.send(embed=em)
         await ctx.channel.send(":e_mail: Sent!")
 
     @is_owner_or_admin()
