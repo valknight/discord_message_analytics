@@ -103,14 +103,15 @@ class Loader():
     async def reload(self, ctx):
         """Reload all existing cogs"""
         startup_extensions_temp = startup_extensions
-        startup_extensions_temp.insert(0, "gssp_experiments.cogs.loader")
+        startup_extensions_temp.insert(0, "loader")
 
         em = discord.Embed(title="Reloading - please wait", color=red)
         output = await ctx.send(embed=em)
 
         for cog in startup_extensions_temp:
-            self.client.unload_extension(cog)
-            self.client.load_extension(cog)
+            extension_full = "{}.{}".format(self.get_path(), cog)
+            self.client.unload_extension(extension_full)
+            self.client.load_extension(extension_full)
 
         em = discord.Embed(title="Finished!", colour=green)
         await output.edit(embed=em)
