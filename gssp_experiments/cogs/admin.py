@@ -79,7 +79,7 @@ class Admin():
         if role_check is None:
             em = discord.Embed(title="Error", description="{} is not in the DB".format(role_name), color=red)
         else:
-            query = "DELETE FROM `gssp`.`roles` WHERE `role_name` = %s; AND `guild_id` = %s"
+            query = "DELETE FROM `gssp`.`roles` WHERE `role_name` = %s AND `guild_id` = %s"
             cursor.execute(query, (role_name, ctx.guild.id))
             cnx.commit()
         return await ctx.channel.send(embed=em)
