@@ -53,7 +53,6 @@ async def on_ready():
                 except mysql.connector.errors.IntegrityError:
                     cursor.execute(update_channel, (channel.name, channel.id))
                     logger.debug("Updated {}".format(channel.name))
-                cnx.commit()
             logger.info("{}: Updating users".format(str(guild)))
             for member in guild.members:
                 name = database_tools.opted_in(user_id=member.id)
@@ -61,7 +60,6 @@ async def on_ready():
                     members.append(member)
                 try:
                     cursor.execute(insert_users, (member.id,))
-
                 except mysql.connector.errors.IntegrityError:
                     pass  # we pass because we just want to make sure we add any new users, so we expect some already here
                 try:
@@ -75,10 +73,10 @@ async def on_ready():
                 if role.name != "@everyone":
                     try:
                         cursor.execute(
-                            insert_role, (role.id, emoji.demojize(role.name), guild.id))
+                            insert_role, (role.id, emoji.demojize(role.name), guild.id, int(role.mentionable)))
                     except mysql.connector.errors.IntegrityError:
                         cursor.execute(
-                            update_role, (emoji.demojize(role.name), role.id))
+                            update_role, (emoji.demojize(role.name), int(role.mentionable), role.id))
 
                     # this is designed to assist with migration, by moving old discord role members over to the new
                     # system seamlessly
