@@ -24,33 +24,6 @@ class Admin():
         self.database_tools = DatabaseTools(client)
         self.client_tools = ClientTools(client)
 
-    @commands.is_owner()
-    @commands.command()
-    async def process_server(self, ctx):
-        """
-        Admin command used to record anonymous analytical data.
-        """
-        for channel in ctx.guild.text_channels:
-            # we run through every channel as discord doesn't provide an
-            # easy alternative
-            logger.info(str(channel.name) +
-                        " is being processed. Please wait.")
-            async for message in channel.history(limit=None, reverse=True):
-                try:
-                    cursor.execute(add_message,
-                                   (int(message.id), str(ctx.channel.id),
-                                    message.created_at.strftime('%Y-%m-%d %H:%M:%S')))
-                except mysql.connector.errors.DataError:
-                    logger.info(
-                        "Couldn't insert {} - likely a time issue".format(message.id))
-                except mysql.connector.errors.IntegrityError:
-                    pass
-            # commit is here, as putting it in for every message causes
-            # mysql to nearly slow to a halt with the amount of queries
-            cnx.commit()
-            print(str(channel.name) + " has been processed.")
-        logger.info("Server {} processing completed".format(str(ctx.guild)))
-
     @is_owner_or_admin()
     @commands.command()
     async def is_processed(self, ctx, user=None):
