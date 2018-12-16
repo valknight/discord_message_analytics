@@ -95,7 +95,7 @@ class Controls():
         pm_channel = (discord.channel.DMChannel == type(ctx.channel))
         if not pm_channel:
             try:
-        await ctx.message.delete()
+                await ctx.message.delete()
             except discord.errors.Forbidden:
                 logger.warn(
                     "Could not delete blacklist command, lacking permissions")
@@ -126,7 +126,7 @@ class Controls():
                 cursor.execute(update_blocklist, (new_json, ctx.author.id,))
 
             else:
-                await msg.delete?()
+                await msg.delete()
                 return await ctx.send(strings['blocklist']['status']['exist'])
 
         elif command == "remove":
@@ -181,6 +181,28 @@ class Controls():
         em = discord.Embed(title=strings['data_collection']['opt_out_finish_title'],
                            description=strings['data_collection']['opt_out_finish_message'], color=colours.green)
         await current_embed.edit(embed=em)
+
+    @commands.command()
+    async def data_info(self, ctx):
+        async with ctx.channel.typing():
+            username = self.database_tools.opted_in(user_id=ctx.author.id)
+            if not username:
+                em = discord.Embed(title="You are not opted in",
+                                   description="As you are opted out, we have no info on you", color=colours.red)
+                return await ctx.author.send(embed=em)
+            message_count = await self.database_tools.get_message_count(
+                user_id=ctx.author.id)
+            blocklist = await self.database_tools.get_blocklist(ctx.author.id)
+            blocklist_count = len(blocklist)
+            # just to prevent this being used later as it contains sensitive info
+            del(blocklist)
+        em = discord.Embed(title="Data info", color=colours.blue)
+        em.add_field(name="Message count", value=message_count)
+        em.add_field(name="Blocklist count", value=blocklist_count)
+
+        # we send to the author, so the data is kept private as per GDPR
+        await ctx.author.send(embed=em)
+        await ctx.message.delete()
 
 
 def setup(client):
