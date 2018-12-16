@@ -8,6 +8,8 @@ import emoji
 import mysql
 from discord.ext import commands
 
+import gssp_experiments
+from gssp_experiments import set_activity
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, update_role
@@ -34,7 +36,7 @@ token = config['discord']['token']
 
 @client.event
 async def on_ready():
-
+    await set_activity(client)
     logger.info("Bot starting. Please wait for synchronization to complete.")
 
     insert_channel = "INSERT INTO channels (channel_id, channel_name) VALUES (%s, %s)"
@@ -104,6 +106,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    await set_activity(client)
     # this set of code in on_message is used to save incoming new messages
     await client_tools.process_message(message)
     return await client.process_commands(message)
