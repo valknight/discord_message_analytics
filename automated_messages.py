@@ -48,7 +48,6 @@ async def on_ready():
                 name = await client_tools.get_delete_emoji()
                 name = name[0]
                 em.set_footer(text=strings['markov']['output']['footer'].format(name))
-                await output.delete()
                 output = await channel.send(embed=em)
                 time.sleep(1)
                 async for message in channel.history(limit=1, reverse=True):
