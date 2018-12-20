@@ -4,7 +4,7 @@ import discord
 import markovify
 import time
 from discord.ext import commands
-
+from discord import Embed
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cnx
 from gssp_experiments.database.database_tools import DatabaseTools
