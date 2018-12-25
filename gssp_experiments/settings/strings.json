@@ -1,6 +1,6 @@
 {
   "english": {
-    "bot_name": "GSSP Experiments",
+    "bot_name": "AGSE Experiments",
     "owner_firstname": "Val",
     "owner_lastname": "Knight",
     "config_invalid": "Version set to {}, but config is made for {}\nRerun config.py, then check the new example config, and ensure you aren't missing any new values.",
@@ -44,7 +44,7 @@
       },
       "output": {
         "footer": "This is an automated message based off the users comments. To delete, click the \"{}\"",
-        "title_server": "GSSP but it's been processed by a robot"
+        "title_server": "AGSE but it's been processed by a robot"
       }
     },
     "tagger": {
@@ -88,7 +88,7 @@
       }
     },
     "data_collection": {
-      "opt_in_title": "Welcome to GSSP experiments! :atom:",
+      "opt_in_title": "Welcome to AGSE experiments! :atom:",
       "opt_in_footer": "To proceed, please run this command again.",
       "data_track_start": "Initialising data tracking",
       "complete": "Finished building {}'s entry! Data analysis can now be ran. If you wish to update your data record at any time, just simply run this command again!",
