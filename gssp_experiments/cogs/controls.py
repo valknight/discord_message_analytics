@@ -74,7 +74,7 @@ class Controls():
             cursor.execute(query, (ctx.author.id,))
             cnx.commit()
             await output.delete()
-            return await ctx.channel.send(embed=discor.Embed(title="Success", description='You will be removed from the pool on the next refresh (IE: when the bot goes back around in a loop again)'))
+            return await ctx.channel.send(embed=discord.Embed(title="Success", description='You will be removed from the pool on the next refresh (IE: when the bot goes back around in a loop again)'))
         else:
             output = await ctx.channel.send("Opting you into automation")
             query = "UPDATE`users` SET `automate_opted_in`=b'1' WHERE `user_id`=%s;"
