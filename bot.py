@@ -106,8 +106,8 @@ async def on_ready():
 async def on_message(message):
     await set_activity(client)
     # this set of code in on_message is used to save incoming new messages
-    await client_tools.process_message(message)
-    return await client.process_commands(message)
+    await client.process_commands(message)
+    return await client_tools.process_message(message)
 
 
 @client.event
