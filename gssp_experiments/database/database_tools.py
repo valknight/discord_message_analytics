@@ -163,5 +163,4 @@ class DatabaseTools():
             query = "SELECT COUNT(*) as message_count FROM messages_detailed WHERE user_id = %s"
             cursor_dict.execute(query, (user_id, ))
         res = cursor_dict.fetchall()[0]
-        print(res)
         return int(res['message_count'])
