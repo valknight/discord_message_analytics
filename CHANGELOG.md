@@ -1,4 +1,7 @@
 # Changelog
+## v0.13.1
+
+- Added "github" command to get github link
 
 ## v0.13
 
