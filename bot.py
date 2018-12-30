@@ -1,6 +1,3 @@
-import datetime
-import json
-import sys
 import os
 
 import discord
@@ -8,11 +5,12 @@ import emoji
 import mysql
 from discord.ext import commands
 
-import gssp_experiments
+from gssp_experiments.settings import guild_settings
 from gssp_experiments import set_activity
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, update_role
+from gssp_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, \
+    update_role
 from gssp_experiments.role_c import DbRole
 from gssp_experiments.settings.config import config, strings
 from gssp_experiments.logger import logger
@@ -46,6 +44,7 @@ async def on_ready():
     members = []
     if not bool(config['discord'].get("skip_scrape")):
         for guild in client.guilds:
+            guild_settings.add_guild(guild)
             logger.info("{}: Updating channels".format(str(guild)))
             for channel in guild.text_channels:
                 try:
@@ -169,6 +168,11 @@ async def on_member_join(member):
     except mysql.connector.errors.IntegrityError:
         pass  # see above
     logger.info("Added {}".format(str(member)))
+
+
+@client.event
+async def on_guild_join(guild):
+    guild_settings.add_guild(guild=guild)
 
 
 if __name__ == "__main__":
