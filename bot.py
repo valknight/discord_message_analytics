@@ -93,7 +93,7 @@ async def on_ready():
             "Skipping scraping data from existing servers - data may be out of date")
     # This needs to be here, so that all the other cogs can be loaded
     client.load_extension("gssp_experiments.cogs.loader")
-    set_activity(client)
+    await set_activity(client)
     logger.info("\n[Connected to Discord]\n[Username]  -   [ {} ]\n[User  ID]  -   [ {} ]".format(
         client.user.name, client.user.id))
 
