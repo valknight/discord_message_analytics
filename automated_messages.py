@@ -17,7 +17,6 @@ database_tools = DatabaseTools(client)
 
 @client.event
 async def on_ready():
-    print("[ Automated bot connected. ]")
     found = False
     for server in client.guilds:
         for channel in server.channels:
