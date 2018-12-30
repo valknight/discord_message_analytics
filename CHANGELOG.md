@@ -1,4 +1,10 @@
 # Changelog
+
+## v0.13
+
+- Renamed "slurs" cog to "flags"
+- Changed flags to work per server, instead of being global
+- Fixed minor bugs
 ## v0.12
 
 - Made roles per server instead of global on the bot
