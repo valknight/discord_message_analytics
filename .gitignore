@@ -63,4 +63,4 @@ venv/
 .github/
 .idea/
 config.json
-gssp_experiments/data/bad_words.json
+gssp_experiments/data
