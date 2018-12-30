@@ -15,7 +15,7 @@ startup_extensions = [
     "controls",
     "markov",
     "sentiment",
-    "slurs",
+    "flags",
     "nyoom",
     "tagger",
     "fun",

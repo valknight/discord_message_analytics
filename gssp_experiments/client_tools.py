@@ -9,6 +9,7 @@ import mysql.connector
 from gssp_experiments import colours
 from gssp_experiments.database import cnx, cursor
 from gssp_experiments.database.database_tools import DatabaseTools
+from gssp_experiments.settings import guild_settings
 from gssp_experiments.settings.config import config, strings
 from gssp_experiments.logger import logger
 enabled_groups = config['discord']['enabled_groups']
@@ -150,7 +151,7 @@ class ClientTools():
                                                                                                              already_added))
 
     async def process_message(self, message):
-        await self.check_slurs(message)
+        await self.check_flags(message)
         user_exp = self.database_tools.opted_in(user_id=message.author.id)
 
         if user_exp is not False:
@@ -171,20 +172,23 @@ class ClientTools():
         except IndexError:
             return
 
-    async def check_slurs(self, message):
+    async def check_flags(self, message):
         if type(message.channel) == discord.DMChannel:
             return
         matches = []
-        file = open("gssp_experiments/data/bad_words.json")
-        slurs = json.loads(file.read())
-        for slur in slurs:
-            if slur.lower() != "" and slur in message.content.lower():
-                matches.append(slur)
+        flag_settings = guild_settings.get_bad_words(message.guild)
+        flags = flag_settings['words']
+        channel_id = flag_settings['alert_channel']
+        if channel_id is None:
+            return
+        for flag in flags:
+            if flag.lower() != "" and flag in message.content.lower():
+                matches.append(flag)
         if len(matches) > 0:
             embed = discord.Embed(
-                title="Potential usage of slur detected", color=colours.dark_red)
+                title="Potential usage of flag detected", color=colours.dark_red)
 
-            embed.add_field(name="Slur(s)", value=str(matches))
+            embed.add_field(name="Flag(s)", value=str(matches))
             embed.add_field(name="Message", value=str(message.content))
             embed.add_field(name="Author", value=str(message.author))
             embed.add_field(name="Author ID", value=str(message.author.id))
@@ -195,8 +199,7 @@ class ClientTools():
                 message.channel.guild.id))
             embed.add_field(name="Guild", value=str(message.channel.guild))
 
-            channel = self.client.get_channel(
-                config['discord']['warning_channel'])
+            channel = self.client.get_channel(channel_id)
             await channel.send(embed=embed)
 
     async def optout_user(self, user):
