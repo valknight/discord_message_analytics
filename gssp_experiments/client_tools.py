@@ -190,14 +190,16 @@ class ClientTools():
 
             embed.add_field(name="Flag(s)", value=str(matches))
             embed.add_field(name="Message", value=str(message.content))
-            embed.add_field(name="Author", value=str(message.author))
+            embed.add_field(name="Author", value=str(message.author.mention))
             embed.add_field(name="Author ID", value=str(message.author.id))
-            embed.add_field(name="Channel", value=str(message.channel))
+            embed.add_field(name="Channel", value=str(message.channel.mention))
             embed.add_field(name="Time", value=str(message.created_at))
             embed.add_field(name="Message ID", value=str(message.id))
             embed.add_field(name="Guild ID", value=str(
                 message.channel.guild.id))
             embed.add_field(name="Guild", value=str(message.channel.guild))
+
+            embed.add_field(name="Message Link", value=str("https://discordapp.com/channels/{}/{}/{}".format(message.guild.id, message.channel.id, message.id)), inline=False)
 
             channel = self.client.get_channel(channel_id)
             await channel.send(embed=embed)

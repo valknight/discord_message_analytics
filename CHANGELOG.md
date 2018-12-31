@@ -1,4 +1,9 @@
 # Changelog
+
+## v0.13.2
+
+- Made flag output prettier, with actual mentions and links
+
 ## v0.13.1
 
 - Added "github" command to get github link
