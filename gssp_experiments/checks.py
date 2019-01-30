@@ -17,8 +17,8 @@ def is_owner_or_admin():
 
 def is_server_allowed():
     def predicate(ctx):
-        #if ctx.author.id == config['discord']['owner_id']:
-        #    return True # we do this so owner has a constant override
+        if ctx.author.id == config['discord']['owner_id']:
+            return True # we do this so owner has a constant override
         server_settings = guild_settings.get_settings(guild=ctx.guild)
         if ctx.author.id == ctx.guild.owner.id:
             return True
