@@ -1,4 +1,5 @@
 import discord
+import re
 from discord.ext import commands
 
 from gssp_experiments.settings import guild_settings
@@ -39,6 +40,10 @@ class Flags():
         if regex:
             if flags.get('regex') is None:
                 flags['regex'] = []
+            try:
+                re.compile(flag)
+            except:
+                return await ctx.channel.send(embed=discord.Embed(title="Error", description="Your regex failed to validate", color=red))
             flags['regex'].append(flag)
         else:
             flags['words'].append(flag.lower())
