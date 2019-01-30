@@ -188,16 +188,13 @@ class ClientTools():
         if channel_id is None:
             return
         for flag in flags:
-            temp_regex = re.compile(flag, re.IGNORECASE)
-            if flag.lower() != "" and len(temp_regex.findall(message.content.lower())) > 0:
-                logger.info("{} triggered flag: {} in guild {}".format(message.content, flag, message.guild))
+            if flag.lower() != "" and flag in message.content.lower():
                 matches.append(flag)
         for regex in regexes:
             try:
                 temp_regex = re.compile(regex, re.IGNORECASE)
                 for word in message.content.lower().split(" "):
                     if temp_regex.match(word):
-                        logger.info("{} triggered flag: {} in guild {}".format(message.content, regex, message.guild))
                         matches.append(word)
             except:
                 pass # we do this because some regex may be bad
