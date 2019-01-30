@@ -36,15 +36,18 @@ token = config['discord']['token']
 async def on_ready():
     game = discord.Game("Starting")
     await client.change_presence(activity=game)
-    logger.info("Bot starting. Please wait for synchronization to complete.")
+    logger.info("Bot starting. Please wait for synchroization to complete.")
 
     insert_channel = "INSERT INTO channels (channel_id, channel_name) VALUES (%s, %s)"
     update_channel = "UPDATE `gssp_logging`.`channels` SET `channel_name`=%s WHERE `channel_id`=%s;"
 
     members = []
+    # we run this for loop twice so we can seperate scraping of data from core components
+    for guild in client.guilds:
+            guild_settings.add_guild(guild)
+    
     if not bool(config['discord'].get("skip_scrape")):
         for guild in client.guilds:
-            guild_settings.add_guild(guild)
             logger.info("{}: Updating channels".format(str(guild)))
             for channel in guild.text_channels:
                 try:

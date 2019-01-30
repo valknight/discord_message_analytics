@@ -3,6 +3,7 @@ import datetime
 import json
 
 import discord
+import re
 import mysql
 import mysql.connector
 
@@ -175,15 +176,29 @@ class ClientTools():
     async def check_flags(self, message):
         if type(message.channel) == discord.DMChannel:
             return
+        if message.author.id == self.client.user.id:
+            return
         matches = []
         flag_settings = guild_settings.get_bad_words(message.guild)
         flags = flag_settings['words']
+        regexes = flag_settings.get('regex')
+        if regexes is None:
+            regexes = []
         channel_id = flag_settings['alert_channel']
         if channel_id is None:
             return
         for flag in flags:
-            if flag.lower() != "" and flag in message.content.lower():
+            temp_regex = re.compile(flag, re.IGNORECASE)
+            if flag.lower() != "" and len(temp_regex.findall(message.content.lower())) > 0:
+                logger.info("{} triggered flag: {} in guild {}".format(message.content, flag, message.guild))
                 matches.append(flag)
+        for regex in regexes:
+            temp_regex = re.compile(regex, re.IGNORECASE)
+            for word in message.content.lower().split(" "):
+                if temp_regex.match(word):
+                    logger.info("{} triggered flag: {} in guild {}".format(message.content, regex, message.guild))
+                    matches.append(word)
+        
         if len(matches) > 0:
             embed = discord.Embed(
                 title="Potential usage of flag detected", color=colours.dark_red)
@@ -199,7 +214,8 @@ class ClientTools():
                 message.channel.guild.id))
             embed.add_field(name="Guild", value=str(message.channel.guild))
 
-            embed.add_field(name="Message Link", value=str("https://discordapp.com/channels/{}/{}/{}".format(message.guild.id, message.channel.id, message.id)), inline=False)
+            embed.add_field(name="Message Link", value=str(
+                "https://discordapp.com/channels/{}/{}/{}".format(message.guild.id, message.channel.id, message.id)), inline=False)
 
             channel = self.client.get_channel(channel_id)
             await channel.send(embed=embed)

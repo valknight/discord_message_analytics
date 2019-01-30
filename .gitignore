@@ -64,3 +64,4 @@ venv/
 .idea/
 config.json
 gssp_experiments/data
+venv/
