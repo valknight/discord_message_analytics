@@ -8,7 +8,7 @@ def add_guild(guild=None, guild_id=None):
     """
     Create config directory for a new guild
     :param guild: Guild object provided by discord
-    :param guild_id: Raw number ID of the guild you wish to add
+    :param guild_id: Raw number ID of the guild you wish to add 
     """
     if guild is not None and guild_id is None:
         guild_id = guild.id
@@ -27,10 +27,32 @@ def add_guild(guild=None, guild_id=None):
         with open("{}/bad_words.json".format(guild_path), "w") as bad_words_f:
             bad_words_f.write(json.dumps({"words" : [], "alert_channel": None}))
         made_change = True
-
+    if not os.path.exists("{}/settings.json".format(guild_path)):
+        with open("{}/settings.json".format(guild_path), "w") as settings_f:
+            settings_f.write(json.dumps({"staff_roles": []}))
     if made_change:
         logger.info("Created data for {}".format(guild_id))
 
+def write_settings(settings):
+    """
+    :param settings: Settings dict returned by get_settings, that you wish to save
+    """
+    with open("{}/{}/settings.json".format(base_directory, settings['guild_id']), "w") as settings_f:
+        settings_f.write(json.dumps(settings))
+
+def get_settings(guild=None, guild_id=None):
+    """
+    :param guild: guild object provided by discord.py
+    :param guild_id: guild_id if you do not have a guild object
+    """
+    if guild is not None and guild_id is None:
+        guild_id = guild.id
+    with open("{}/{}/settings.json".format(base_directory, guild_id)) as settings_f:
+        settings = json.loads(settings_f.read())
+    settings['guild_id'] = guild_id
+    return settings
+
+# bad words configuration
 
 def write_bad_words(flags):
     """

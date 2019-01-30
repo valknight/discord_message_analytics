@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 
 from gssp_experiments.settings import guild_settings
-from gssp_experiments.checks import is_owner_or_admin
+from gssp_experiments.checks import is_server_allowed
 from gssp_experiments.client_tools import ClientTools
 from gssp_experiments.colours import red, green, yellow
 from gssp_experiments.database.database_tools import DatabaseTools
@@ -15,7 +15,7 @@ class Flags():
         self.database_tools = DatabaseTools(client)
         self.client_tools = ClientTools(client)
 
-    @is_owner_or_admin()
+    @is_server_allowed()
     @commands.command(aliases=["flags", "getflags", "slurs", "get_slurs", "getslurs"])
     async def get_flags(self, ctx):
         """Get the global flag list"""
@@ -23,20 +23,25 @@ class Flags():
         em = discord.Embed(title="Flag trigger list", description="")
         for word in flags['words']:
             em.description = em.description + "- {}\n".format(word)
-        if len(flags['words']) == 0:
+        for word in flags.get('regex'):
+            em.description = em.description + "- {}\n".format(word)
+        if em.description == "":
             em.description = "You have not configured a flag list for guild {}".format(ctx.guild.name)
         await ctx.author.send(embed=em)
         await ctx.channel.send(
             embed=discord.Embed(title="Success", description=":e_mail: Sent to your DMs!", color=green))
 
-    @is_owner_or_admin()
+    @is_server_allowed()
     @commands.command(aliases=["addflag", "add_slur", "addslur"])
-    async def add_flag(self, ctx, flag):
+    async def add_flag(self, ctx, flag, regex=False):
         """Add a flag to the global flag list"""
-        await ctx.message.delete()
         flags = get_bad_words(guild=ctx.guild)
-
-        flags['words'].append(flag.lower())
+        if regex:
+            if flags.get('regex') is None:
+                flags['regex'] = []
+            flags['regex'].append(flag)
+        else:
+            flags['words'].append(flag.lower())
 
         guild_settings.write_bad_words(flags)
 
@@ -48,15 +53,18 @@ class Flags():
         description = description + "."
         await ctx.channel.send(embed=discord.Embed(title="Success", description=description, color=color))
 
-    @is_owner_or_admin()
+    @is_server_allowed()
     @commands.command(aliases=["removeflag", "remove_slur", "removeslur"])
     async def remove_flag(self, ctx, flag):
         """Remove a flag from the global flag list"""
-        await ctx.message.delete()
         flags = get_bad_words(guild=ctx.guild)
-
+        flags['regex'] = flags.get('regex')
+        if flags['regex'] is None:
+            flags['regex'] = []
         if flag.lower() in flags['words']:
             flags['words'].remove(flag.lower())
+        elif flag in flags['regex']:
+            flags['regex'].remove(flag)
         else:
             return await ctx.channel.send(
                 embed=discord.Embed(title="Error", description="Flag does not exist", color=red))
@@ -68,7 +76,7 @@ class Flags():
             description = description + ", but you have no channel configured to send notifications to"
         description = description + "."
         await ctx.channel.send(embed=discord.Embed(title="Success", description=description, color=color))
-    @is_owner_or_admin()
+    @is_server_allowed()
     @commands.command(aliases=['flagchannel', 'slurchannel', 'slur_channel'])
     async def flag_channel(self, ctx):
         """
