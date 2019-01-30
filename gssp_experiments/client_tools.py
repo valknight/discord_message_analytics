@@ -193,11 +193,14 @@ class ClientTools():
                 logger.info("{} triggered flag: {} in guild {}".format(message.content, flag, message.guild))
                 matches.append(flag)
         for regex in regexes:
-            temp_regex = re.compile(regex, re.IGNORECASE)
-            for word in message.content.lower().split(" "):
-                if temp_regex.match(word):
-                    logger.info("{} triggered flag: {} in guild {}".format(message.content, regex, message.guild))
-                    matches.append(word)
+            try:
+                temp_regex = re.compile(regex, re.IGNORECASE)
+                for word in message.content.lower().split(" "):
+                    if temp_regex.match(word):
+                        logger.info("{} triggered flag: {} in guild {}".format(message.content, regex, message.guild))
+                        matches.append(word)
+            except:
+                pass # we do this because some regex may be bad
         
         if len(matches) > 0:
             embed = discord.Embed(
