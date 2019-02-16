@@ -21,11 +21,11 @@ class MessageLogger():
                 logger.info("{}: Updating channels".format(str(guild)))
                 for channel in guild.text_channels:
                     try:
-                        cursor.execute(insert_channel, (channel.id, channel.name))
-                        logger.debug("Inserted {} to DB".format(channel.name))
+                        cursor.execute(insert_channel, (channel.id, emoji.demojize(channel.name)))
+                        logger.debug("Inserted {} to DB".format(emoji.demojize(channel.name)))
                     except mysql.connector.errors.IntegrityError:
-                        cursor.execute(update_channel, (channel.name, channel.id))
-                        logger.debug("Updated {}".format(channel.name))
+                        cursor.execute(update_channel, (emoji.demojize(channel.name), channel.id))
+                        logger.debug("Updated {}".format(emoji.demojize(channel.name)))
                 logger.info("{}: Updating users".format(str(guild)))
                 for member in guild.members:
                     try:

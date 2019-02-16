@@ -1,4 +1,9 @@
 # Changelog
+
+## v0.14.1
+
+- Fixed issue when channels had emoji in their names and a DB was set up badly
+
 ## v0.14.0
 
 - Move admin and ping commands into groups of subcategories, to clean up commands (run `help` to see new subcategories)
