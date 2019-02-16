@@ -1,4 +1,10 @@
 # Changelog
+## v.0.14.0
+
+- Move admin and ping commands into groups of subcategories, to clean up commands (run `help` to see new subcategories)
+- Added hidden redirects for old user facing commands to ease into transition
+- Added sharding support when running at scale
+- Added command to get average latency of bot, and specific information about best and worst shards currently
 
 ## v0.13.2
 
