@@ -27,7 +27,7 @@ else:
 shard_count = config['discord'].get("shard_count")
 if shard_count is None:
     logger.warn("config['discord']['shard_count'] is not set - defaulting to 1 shard")
-    shard_count = 15
+    shard_count = 1
 
 client = commands.AutoShardedBot(
     command_prefix=prefix, owner_id=config['discord']['owner_id'], shard_count=shard_count)
