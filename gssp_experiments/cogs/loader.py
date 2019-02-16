@@ -20,7 +20,8 @@ startup_extensions = [
     "tagger",
     "fun",
     "ping",
-    "unembed"
+    "unembed",
+    "message_logger"
 ]
 
 
@@ -53,7 +54,7 @@ class Loader():
                 exc = '{}: {}'.format(type(e).__name__, e)
                 logger.error(
                     'Failed to load extension {}\n{}\n{}'.format(extension, exc, traceback.format_exc()))
-
+    
     @commands.is_owner()
     @commands.command(aliases=["un_load"])
     async def unload(self, ctx, extension_name: str):
