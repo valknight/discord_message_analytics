@@ -25,9 +25,14 @@ class Admin():
         self.client = client
         self.database_tools = DatabaseTools(client)
         self.client_tools = ClientTools(client)
+    @commands.group(hidden=True)
+    async def debug(self, ctx):
+        """Debug utilities for AGSE and Discord"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Invalid params. Run `help debug` to get all commands.")
 
     @is_server_allowed()
-    @commands.command(aliases=["isprocessed", "processed"])
+    @debug.command(aliases=["isprocessed", "processed"])
     async def is_processed(self, ctx, user=None):
         """
         Admin command used to check if a member has opted in
@@ -41,8 +46,8 @@ class Admin():
         return await ctx.edit(content=strings['process_check']['status']['opted_in'])
 
 
-    @is_server_allowed()
-    @commands.command(aliases=["dumproles"])
+    @is_owner_or_admin()
+    @debug.command(aliases=["dumproles"])
     async def dump_roles(self, ctx):
         """
         Dump all roles to a text file on the host
@@ -58,6 +63,34 @@ class Admin():
         em = discord.Embed(title="Done", description="Check roles.txt")
         await ctx.channel.send(embed=em)
 
+    @debug.command(aliases=["lag"])
+    async def latency(self, ctx):
+        # this is a tuple, with [0] being the shard_id, and [1] being the latency
+        latencies = self.client.latencies
+        lowest_lag = latencies[0]
+        highest_lag = latencies[0]
+        sum = 0
+        for i in latencies:
+            if i[1] < lowest_lag[1]:
+                lowest_lag = i
+            if i[1] > highest_lag[1]:
+                highest_lag = i
+            sum += i[1]
+        avg = (sum/len(latencies))
+        embed = discord.Embed(title="Latency")
+        embed.add_field(name="Avg", value="{}".format(str(avg)))
+        embed.add_field(name="Lowest Latency", value="{} on shard {}".format(lowest_lag[1], lowest_lag[0]))
+        embed.add_field(name="Highest Latency", value="{} on shard {}".format(highest_lag[1], highest_lag[0]))
+        print(latencies)
+        return await ctx.channel.send(embed=embed)
+            
+    @debug.command(aliases=["role_id"])
+    async def roleid(self, ctx, role_name):
+        for role in ctx.guild.roles:
+            if role_name.lower() == role.name.lower():
+                return await ctx.send(role.id)
+        return await ctx.send(embed=discord.Embed(title="Could not find role {}".format(role_name)))
+    
     @is_server_allowed()
     @commands.group(aliases=["rolem"])
     async def role_manage(self, ctx):
