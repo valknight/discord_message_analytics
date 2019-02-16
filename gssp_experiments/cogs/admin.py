@@ -163,7 +163,13 @@ class Admin():
         await ctx.channel.send(embed=em)
 
     @is_owner_or_admin()
-    @commands.command(aliases=["resyncroles", "syncroles", "rolesync", "role_sync", "sync_roles"])
+    @commands.group(aliases=["config"])
+    async def settings(self, ctx):
+        """Manages settings of AGSE"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Invalid params. Run `help settings` to get all commands.")
+    
+    @settings.command(aliases=["resyncroles", "syncroles", "rolesync", "role_sync", "sync_roles"])
     async def resync_roles(self, ctx):
         """
         Force refresh the roles in the database with the roles discord has.
@@ -187,8 +193,14 @@ class Admin():
                         update_role, (emoji.demojize(role.name), role.id))
         await ctx.send(embed=discord.Embed(title="Success", description="Resynced roles.", color=green))
     
-    @is_server_allowed()
-    @commands.command()
+    @is_owner_or_admin()
+    @settings.group(aliases=["permissions"])
+    async def perms(self, ctx):
+        """Manages AGSE roles (ping groups)"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Run `help settings perms` to get info on subcommands")
+    
+    @perms.command()
     async def promote_role(self, ctx, role_id):
         """
         Add a role to the list of allowed roles
@@ -204,8 +216,7 @@ class Admin():
         guild_settings.write_settings(settings)
         return await ctx.send(embed=discord.Embed(title="Success", description="Role {} added to admin list".format(role.name), color=green))
     
-    @is_server_allowed()
-    @commands.command()
+    @perms.command()
     async def demote_role(self, ctx, role_id):
         role_id = int(role_id)
         role_to_remove = ctx.guild.get_role(int(role_id))
