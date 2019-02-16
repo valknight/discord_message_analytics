@@ -64,7 +64,8 @@ class Admin():
         await ctx.channel.send(embed=em)
     
     @debug.command(aliases=["lag"])
-    async def latency(self, ctx):
+    async def latency(self, ctx, detailed=None):
+        detailed = bool(detailed)
         # this is a tuple, with [0] being the shard_id, and [1] being the latency
         latencies = self.client.latencies
         lowest_lag = latencies[0]
@@ -75,13 +76,20 @@ class Admin():
                 lowest_lag = i
             if i[1] > highest_lag[1]:
                 highest_lag = i
-            sum += i[1]
+            sum += i[1] # could probably do this in a one liner, but may as well as we have to iterate anyway
+        
         avg = (sum/len(latencies))
+        
         embed = discord.Embed(title="Latency")
+        
+        # add specific information about latency
         embed.add_field(name="Avg", value="{}".format(str(avg)))
         embed.add_field(name="Lowest Latency", value="{} on shard {}".format(lowest_lag[1], lowest_lag[0]))
         embed.add_field(name="Highest Latency", value="{} on shard {}".format(highest_lag[1], highest_lag[0]))
-        print(latencies)
+        
+        if detailed:
+            embed.add_field(name="RawData", value=str(latencies))
+
         return await ctx.channel.send(embed=embed)
             
     @debug.command(aliases=["role_id"])
