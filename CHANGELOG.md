@@ -1,5 +1,5 @@
 # Changelog
-## v.0.14.0
+## v0.14.0
 
 - Move admin and ping commands into groups of subcategories, to clean up commands (run `help` to see new subcategories)
 - Added hidden redirects for old user facing commands to ease into transition
