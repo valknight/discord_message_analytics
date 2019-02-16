@@ -37,10 +37,6 @@ database_tools = DatabaseTools(client)
 token = config['discord']['token']
 
 @client.event
-async def on_shard_ready(shard_id):
-    print(shard_id)
-
-@client.event
 async def on_ready():
     game = discord.Game("Starting")
     await client.change_presence(activity=game)
