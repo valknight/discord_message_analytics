@@ -40,6 +40,7 @@ class Loader():
         path = self.get_path() + "."
         return extension_name.replace(path, "")
     
+    
     def load_all_extensions(self):
         """
         This will import all of our extensions, and set extension_imported to the code of the imports
@@ -49,15 +50,13 @@ class Loader():
             try:
                 to_load = "{}.{}".format(self.get_path(), extension)
                 self.extension_imported.append(dict(name=extension, module=importlib.import_module(to_load)))
-                print(to_load)
                 self.client.load_extension(to_load)
+                logger.info("Loaded {} (from {})".format(extension, to_load))
                 del(to_load)
-                logger.info("Loaded {}".format(extension))
             except Exception as e:
                 exc = '{}: {}'.format(type(e).__name__, e)
                 logger.error(
                     'Failed to load extension {}\n{}\n{}'.format(extension, exc, traceback.format_exc()))
-        print(self.extension_imported)
     
     def __init__(self, client):
         # self.automated = subprocess.Popen(
