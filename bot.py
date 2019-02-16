@@ -46,6 +46,9 @@ async def on_ready():
     for guild in client.guilds:
             guild_settings.add_guild(guild)
     
+    if debug:
+        for guild in client.guilds:
+            logger.info("Found guild {} - {} channels".format(guild.name, len(guild.text_channels)))
     if not bool(config['discord'].get("skip_scrape")):
         for guild in client.guilds:
             logger.info("{}: Updating channels".format(str(guild)))
