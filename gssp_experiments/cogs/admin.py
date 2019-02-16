@@ -30,7 +30,7 @@ class Admin():
         """Debug utilities for AGSE and Discord"""
         if ctx.invoked_subcommand is None:
             await ctx.send("Invalid params. Run `help debug` to get all commands.")
-
+    
     @is_server_allowed()
     @debug.command(aliases=["isprocessed", "processed"])
     async def is_processed(self, ctx, user=None):
@@ -62,7 +62,7 @@ class Admin():
         roles.close()
         em = discord.Embed(title="Done", description="Check roles.txt")
         await ctx.channel.send(embed=em)
-
+    
     @debug.command(aliases=["lag"])
     async def latency(self, ctx):
         # this is a tuple, with [0] being the shard_id, and [1] being the latency
@@ -96,7 +96,7 @@ class Admin():
     async def role_manage(self, ctx):
         """Manages AGSE roles (ping groups)"""
         if ctx.invoked_subcommand is None:
-            await ctx.send("Run `help rolem` to get info on subcommands")
+            await ctx.send("Invalid params. Run `help rolem` to get all commands.")
     
     @role_manage.command()
     async def add(self, ctx, role_name):
@@ -161,7 +161,7 @@ class Admin():
         cnx.commit()
 
         await ctx.channel.send(embed=em)
-
+    
     @is_owner_or_admin()
     @commands.group(aliases=["config"])
     async def settings(self, ctx):
