@@ -59,8 +59,14 @@ class Admin():
         await ctx.channel.send(embed=em)
 
     @is_server_allowed()
-    @commands.command(aliases=["addrole"])
-    async def add_role(self, ctx, role_name):
+    @commands.group(aliases=["rolem"])
+    async def role_manage(self, ctx):
+        """Manages AGSE roles (ping groups)"""
+        if ctx.invoked_subcommand is None:
+            await ctx.send("Run `help rolem` to get info on subcommands")
+    
+    @role_manage.command()
+    async def add(self, ctx, role_name):
         """Add a role. Note: by default, it isn't joinable"""
         role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(title="Success", description="Created role {}".format(role_name), color=green)
@@ -71,10 +77,9 @@ class Admin():
             cursor.execute(query, (role_name, ctx.guild.id))
             cnx.commit()
         return await ctx.channel.send(embed=em)
-
-    @is_server_allowed()
-    @commands.command(aliases=["deleterole", "remove_role", "removerole"])
-    async def delete_role(self, ctx, role_name):
+    
+    @role_manage.command(aliases=["remove"])
+    async def delete(self, ctx, role_name):
         """Deletes a role - cannot be undone!"""
         role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(title="Success", description="Deleted role {}".format(role_name), color=green)
@@ -85,10 +90,9 @@ class Admin():
             cursor.execute(query, (role_name, ctx.guild.id))
             cnx.commit()
         return await ctx.channel.send(embed=em)
-
-    @is_server_allowed()
-    @commands.command(aliases=["toggleping", "switchping", "toggle_ping", "switch_ping", "togglepingable"])
-    async def toggle_pingable(self, ctx, role_name):
+    
+    @role_manage.command(aliases=["togglepingable"])
+    async def pingable(self, ctx, role_name):
         """Change a role from not pingable to pingable or vice versa"""
         role = get_role(ctx.guild.id, role_name)
         if role is None:
@@ -103,9 +107,9 @@ class Admin():
         cnx.commit()
         await ctx.channel.send(embed=discord.Embed(title="SUCCESS", description="Set {} ({}) to {}".format(role['role_name'], role['role_id'], text), color=green))
 
-    @is_server_allowed()
-    @commands.command(aliases=["togglejoinable", "togglejoin", "toggle_join"])
-    async def toggle_joinable(self, ctx, role_name):
+    
+    @role_manage.command(aliases=["togglejoinable", "togglejoin", "toggle_join"])
+    async def joinable(self, ctx, role_name):
         """
         Toggles whether a role is joinable
         """
