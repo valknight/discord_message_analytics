@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.15.0
+
+- Added hangman, as proof of concept game!
+
 ## v0.14.1
 
 - Fixed issue when channels had emoji in their names and a DB was set up badly
