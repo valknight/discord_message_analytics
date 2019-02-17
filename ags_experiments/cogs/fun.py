@@ -50,7 +50,6 @@ class Hangman():
             x = (randint(0, len(word_list.words)))
             if self.check_word(word_list.words[x]):
                 word = word_list.words[x]
-        
         # set u
         self.word = word
         self.revealed = ""
@@ -128,6 +127,8 @@ class Fun():
                 a = Embed(title="Current status", description="Your word is `{}` - it is {} letters long\nPlease make a guess".format(hangman.format_reveal(), len(hangman.revealed), timeouts*timeout_seconds), color=yellow)
                 a.add_field(name="Time left", value="{} seconds".format(timeouts*timeout_seconds))
                 a.add_field(name="Lives", value="{} lives".format(hangman.lives))
+                if len(hangman.guessed)>0:
+                    a.add_field(name="Attempted letters", value="{}".format(", ".join(hangman.guessed)), inline=False)
                 a.set_footer(text="To stop, type `quit` (this works even if you didn't start this) - use this if a word is not appropriate, as a quit game won't tell you the correct word")
                 return a
             message = await ctx.send(embed=generate_embed(), delete_after=(timeout_seconds*timeout_attempts+5))
@@ -144,7 +145,9 @@ class Fun():
             if timeouts<=0 or msg.content.lower() == "quit":
                 break
             if len(msg.content)>1:
-                await ctx.send(embed=discord.Embed(title="Invalid letter", description="{}, your guess `{}` is too long! Go for only one letter at a time".format(msg.author.nick, msg.content)), delete_after=timeouts*timeout_seconds+5)
+                if msg.content.lower() == hangman.word.lower():
+                    hangman.revealed=hangman.word.lower()
+                    break
                 timeouts = timeout_attempts
             elif msg.content.lower() in hangman.guessed:
                 await ctx.send(embed=discord.Embed(title="Move already made!", description="{}, your guess has already been made. Be unique!".format(msg.author.nick)), delete_after=timeouts*timeout_seconds+5)

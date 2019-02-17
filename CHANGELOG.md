@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.15.1
+
+- Show already guessed letters in hangman
+- Remove responding to invalid guesses in hangman (unless entire word)
+
 ## v0.15.0
 
 - Added hangman, as proof of concept game!
