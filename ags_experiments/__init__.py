@@ -11,10 +11,11 @@ def get_version():
 
 __license__ = "MIT"
 __author__ = "Val Knight"
-__version__ = get_version()
+__version__ = str(get_version())
+
 async def set_activity(client):
     output = str(get_version())
-    if __version__ != get_version(): # version must've changed, bot may need rebooting
+    if __version__ != str(get_version()): # version must've changed, bot may need rebooting
         output = output+" [R]"
-    game = discord.Game(get_version())
+    game = discord.Game(output)
     await client.change_presence(status=discord.Status.idle, activity=game)
