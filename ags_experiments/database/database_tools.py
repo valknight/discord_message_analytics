@@ -2,8 +2,8 @@ import json
 
 import mysql.connector.errors
 
-from gssp_experiments.database import cursor, cnx, cursor_dict
-from gssp_experiments.logger import logger
+from ags_experiments.database import cursor, cnx, cursor_dict
+from ags_experiments.logger import logger
 
 add_message_custom = "INSERT INTO `messages_detailed` (id, user_id, channel_id, time, contents) VALUES (%s, %s, %s, %s, %s)"
 insert_users = "INSERT INTO `gssp`.`users` (`user_id`) VALUES (%s);"
@@ -17,7 +17,7 @@ class DatabaseTools():
         self.client = client
 
     def add_message_to_db(self, message):
-        from gssp_experiments.client_tools import ClientTools
+        from ags_experiments.client_tools import ClientTools
         self.client_tools = ClientTools(self.client)
         try:
             is_allowed = self.client_tools.channel_allowed(

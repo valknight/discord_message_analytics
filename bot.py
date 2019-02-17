@@ -5,15 +5,15 @@ import emoji
 import mysql
 from discord.ext import commands
 
-from gssp_experiments.settings import guild_settings
-from gssp_experiments import set_activity
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, \
+from ags_experiments.settings import guild_settings
+from ags_experiments import set_activity
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.database import cnx, cursor
+from ags_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, \
     update_role
-from gssp_experiments.role_c import DbRole
-from gssp_experiments.settings.config import config, strings
-from gssp_experiments.logger import logger
+from ags_experiments.role_c import DbRole
+from ags_experiments.settings.config import config, strings
+from ags_experiments.logger import logger
 
 if config['discord']['debug'] or bool(os.environ.get('discord_experiments_debug')):
     logger.info("Running in debug mode.")
@@ -43,7 +43,7 @@ async def on_ready():
     logger.info("Connected to Discord as {} ({})".format(client.user.name, client.user.id))
     
     # This needs to be here, so that all the other cogs can be loaded
-    client.load_extension("gssp_experiments.cogs.loader")
+    client.load_extension("ags_experiments.cogs.loader")
     await set_activity(client)
 
     for guild in client.guilds:

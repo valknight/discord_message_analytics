@@ -2,12 +2,12 @@ import discord
 import re
 from discord.ext import commands
 
-from gssp_experiments.settings import guild_settings
-from gssp_experiments.checks import is_server_allowed
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.colours import red, green, yellow
-from gssp_experiments.database.database_tools import DatabaseTools
-from gssp_experiments.settings.guild_settings import get_bad_words
+from ags_experiments.settings import guild_settings
+from ags_experiments.checks import is_server_allowed
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.colours import red, green, yellow
+from ags_experiments.database.database_tools import DatabaseTools
+from ags_experiments.settings.guild_settings import get_bad_words
 
 
 class Flags():

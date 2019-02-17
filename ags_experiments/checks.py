@@ -1,7 +1,7 @@
 from discord.ext import commands
 
-from gssp_experiments.settings.config import config
-from gssp_experiments.settings import guild_settings
+from ags_experiments.settings.config import config
+from ags_experiments.settings import guild_settings
 
 def is_owner_or_admin():
     def predicate(ctx):

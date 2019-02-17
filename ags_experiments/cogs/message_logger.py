@@ -1,10 +1,10 @@
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.settings.config import config
-from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, \
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.settings.config import config
+from ags_experiments.database import cnx, cursor
+from ags_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, \
     update_role
-from gssp_experiments.logger import logger
-from gssp_experiments.role_c import DbRole
+from ags_experiments.logger import logger
+from ags_experiments.role_c import DbRole
 import emoji
 import mysql
 

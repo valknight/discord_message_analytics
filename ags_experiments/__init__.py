@@ -4,7 +4,7 @@ Copyright 2018 Val Knight (vallerie.knight@gmail.com)
 """
 import discord
 
-with open("gssp_experiments/settings/version") as version:
+with open("ags_experiments/settings/version") as version:
     __version__ = version.read()
 
 __license__ = "MIT"

@@ -5,9 +5,9 @@ from discord.errors import DiscordException
 import hashlib
 import io
 
-from gssp_experiments import colours
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.settings.config import strings, config
+from ags_experiments import colours
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.settings.config import strings, config
 
 
 class Unembed():

@@ -7,12 +7,12 @@ import re
 import mysql
 import mysql.connector
 
-from gssp_experiments import colours
-from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.database_tools import DatabaseTools
-from gssp_experiments.settings import guild_settings
-from gssp_experiments.settings.config import config, strings
-from gssp_experiments.logger import logger
+from ags_experiments import colours
+from ags_experiments.database import cnx, cursor
+from ags_experiments.database.database_tools import DatabaseTools
+from ags_experiments.settings import guild_settings
+from ags_experiments.settings.config import config, strings
+from ags_experiments.logger import logger
 enabled_groups = config['discord']['enabled_groups']
 
 add_message = ("INSERT INTO messages (id, channel, time) VALUES (%s, %s, %s)")

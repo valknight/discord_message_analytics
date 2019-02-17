@@ -1,6 +1,6 @@
 import json
 
-from gssp_experiments.database import cnx, cursor_dict as cursor
+from ags_experiments.database import cnx, cursor_dict as cursor
 
 
 def get_role(guild_id, role_name):

@@ -4,11 +4,11 @@ import random
 import discord
 from discord.ext import commands
 
-from gssp_experiments.algorithmia import algo_client
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.database.database_tools import DatabaseTools
-from gssp_experiments.settings.config import config, strings
-import gssp_experiments.colours as colours
+from ags_experiments.algorithmia import algo_client
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.database.database_tools import DatabaseTools
+from ags_experiments.settings.config import config, strings
+import ags_experiments.colours as colours
 
 class Sentiment():
 

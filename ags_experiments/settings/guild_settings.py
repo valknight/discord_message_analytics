@@ -1,8 +1,8 @@
 import os
 import json
-from gssp_experiments.logger import logger
+from ags_experiments.logger import logger
 
-base_directory = "gssp_experiments/data"  # change this to another location if you wish per-server configs to be elsewhere
+base_directory = "ags_experiments/data"  # change this to another location if you wish per-server configs to be elsewhere
 
 def add_guild(guild=None, guild_id=None):
     """
@@ -73,10 +73,10 @@ def get_bad_words(guild=None, guild_id=None):
         guild_id = guild.id
     to_return = dict()
     try:
-        json_f = open("gssp_experiments/data/{}/bad_words.json".format(guild_id))
+        json_f = open("ags_experiments/data/{}/bad_words.json".format(guild_id))
     except FileNotFoundError:
         add_guild(guild=guild, guild_id=guild_id)
-        json_f = open("gssp_experiments/data/{}/bad_words.json".format(guild_id))
+        json_f = open("ags_experiments/data/{}/bad_words.json".format(guild_id))
     loaded_json = json.loads(json_f.read())
     json_f.close()
     loaded_json['guild_id'] = guild_id # we include this, so we can just pass this around, without the guild object

@@ -4,12 +4,12 @@ import discord
 import mysql
 from discord.ext import commands
 
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.database import cursor, cnx
-from gssp_experiments.logger import logger
-from gssp_experiments.database.database_tools import DatabaseTools
-from gssp_experiments.settings.config import strings, config
-from gssp_experiments import colours
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.database import cursor, cnx
+from ags_experiments.logger import logger
+from ags_experiments.database.database_tools import DatabaseTools
+from ags_experiments.settings.config import strings, config
+from ags_experiments import colours
 opt_in_message = """
 We want to protect your information, and therefore you need to read the following in detail. We keep it brief as a lot of this is important for you to know incase you change your mind in the future.
             ```

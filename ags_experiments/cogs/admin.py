@@ -6,16 +6,16 @@ import emoji
 import mysql
 from discord.ext import commands
 
-from gssp_experiments.checks import is_owner_or_admin, is_server_allowed
-from gssp_experiments.client_tools import ClientTools, add_message
-from gssp_experiments.colours import green, red
-from gssp_experiments.database import cnx, cursor
-from gssp_experiments.database.database_tools import DatabaseTools, insert_role, update_role
-from gssp_experiments.role_c import DbRole
-from gssp_experiments.settings.config import config, strings
-from gssp_experiments.utils import get_role
-from gssp_experiments.logger import logger
-from gssp_experiments.settings import guild_settings
+from ags_experiments.checks import is_owner_or_admin, is_server_allowed
+from ags_experiments.client_tools import ClientTools, add_message
+from ags_experiments.colours import green, red
+from ags_experiments.database import cnx, cursor
+from ags_experiments.database.database_tools import DatabaseTools, insert_role, update_role
+from ags_experiments.role_c import DbRole
+from ags_experiments.settings.config import config, strings
+from ags_experiments.utils import get_role
+from ags_experiments.logger import logger
+from ags_experiments.settings import guild_settings
 
 
 

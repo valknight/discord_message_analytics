@@ -5,11 +5,11 @@ import traceback
 import discord
 from discord.ext import commands
 
-from gssp_experiments.checks import is_owner_or_admin
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.colours import green, red, blue
-from gssp_experiments.settings.config import config, strings
-from gssp_experiments.logger import logger
+from ags_experiments.checks import is_owner_or_admin
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.colours import green, red, blue
+from ags_experiments.settings.config import config, strings
+from ags_experiments.logger import logger
 import importlib
 startup_extensions = [
     "admin",

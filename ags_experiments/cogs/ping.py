@@ -2,13 +2,13 @@ import discord
 from discord import Embed
 from discord.ext import commands
 
-from gssp_experiments.client_tools import ClientTools
-from gssp_experiments.colours import gold, green, red
-from gssp_experiments.database import cnx, cursor_dict as cursor
-from gssp_experiments.database.database_tools import DatabaseTools
-from gssp_experiments.role_c import DbRole
-from gssp_experiments.utils import get_role, get_roles, get_user
-from gssp_experiments.settings.config import config, strings
+from ags_experiments.client_tools import ClientTools
+from ags_experiments.colours import gold, green, red
+from ags_experiments.database import cnx, cursor_dict as cursor
+from ags_experiments.database.database_tools import DatabaseTools
+from ags_experiments.role_c import DbRole
+from ags_experiments.utils import get_role, get_roles, get_user
+from ags_experiments.settings.config import config, strings
 
 
 class Ping():

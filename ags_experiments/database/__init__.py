@@ -1,7 +1,7 @@
 import mysql.connector
 import sys
-from gssp_experiments.logger import logger
-from gssp_experiments.settings.config import config
+from ags_experiments.logger import logger
+from ags_experiments.settings.config import config
 
 port = config['mysql'].get("port")
 if port is None:

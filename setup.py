@@ -4,7 +4,7 @@ import os
 import mysql.connector
 
 # Load config file
-from gssp_experiments.settings.config import config
+from ags_experiments.settings.config import config
 
 discordpy_command = "python3 -m pip install -U https://github.com/Rapptz/discord.py/archive/rewrite.zip#egg=discord.py"
 requirements = "python3 -m pip install -r requirements.txt"

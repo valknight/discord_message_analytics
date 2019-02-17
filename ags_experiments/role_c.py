@@ -1,6 +1,6 @@
 import json
 
-from gssp_experiments.database import cnx, cursor_dict
+from ags_experiments.database import cnx, cursor_dict
 
 update_query = "UPDATE `gssp`.`roles` SET `role_assignees`=%s WHERE `role_id`=%s;"
 

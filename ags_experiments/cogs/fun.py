@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord import Embed
-from gssp_experiments.checks import is_owner_or_admin
-from gssp_experiments.settings.config import strings, config
+from ags_experiments.checks import is_owner_or_admin
+from ags_experiments.settings.config import strings, config
 
 
 class Fun():
