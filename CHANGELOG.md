@@ -4,6 +4,8 @@
 
 - Show already guessed letters in hangman
 - Remove responding to invalid guesses in hangman (unless entire word)
+- Make version update when the text file is updated
+- Add indicator to show when files are likely newer than version running
 
 ## v0.15.0
 
