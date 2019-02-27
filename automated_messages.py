@@ -27,34 +27,37 @@ async def on_ready():
             break
 
     while True:
-        opted_in_users = []
-        for user in server.members:
-            if database_tools.is_automated(user):
-                opted_in_users.append(user)
-        for user in opted_in_users:
-            messages, channels = await database_tools.get_messages(user.id, config['limit'])
-            cnx.commit()
-            text_full = ""
+        try:
+            opted_in_users = []
+            for user in server.members:
+                if database_tools.is_automated(user):
+                    opted_in_users.append(user)
+            for user in opted_in_users:
+                messages, channels = await database_tools.get_messages(user.id, config['limit'])
+                cnx.commit()
+                text_full = ""
 
-            for x in range(0, len(messages)):
-                channel_temp = client.get_channel(int(channels[x]))
-                if not channel_temp.is_nsfw():
-                    text_full = text_full + messages[x] + "\n"
-            try:
-                text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
-                em = discord.Embed(title=user.display_name, description=text_model.make_short_sentence(140))
-                em.set_thumbnail(url=user.avatar_url)
-                name = await client_tools.get_delete_emoji()
-                name = name[0]
-                em.set_footer(text=strings['markov']['output']['footer'].format(name))
-                output = await channel.send(embed=em)
-                time.sleep(1)
-                async for message in channel.history(limit=1, reverse=True):
-                    message = message
-                    break
-                await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
-            except KeyError:
-                pass
+                for x in range(0, len(messages)):
+                    channel_temp = client.get_channel(int(channels[x]))
+                    if not channel_temp.is_nsfw():
+                        text_full = text_full + messages[x] + "\n"
+                try:
+                    text_model = markovify.NewlineText(text_full, state_size=config['state_size'])
+                    em = discord.Embed(title=user.display_name, description=text_model.make_short_sentence(140))
+                    em.set_thumbnail(url=user.avatar_url)
+                    name = await client_tools.get_delete_emoji()
+                    name = name[0]
+                    em.set_footer(text=strings['markov']['output']['footer'].format(name))
+                    output = await channel.send(embed=em)
+                    time.sleep(1)
+                    async for message in channel.history(limit=1, reverse=True):
+                        message = message
+                        break
+                    await delete_option(client, message, channel, client.get_emoji(int(strings['emojis']['delete'])) or "❌")
+                except KeyError:
+                    pass
+        except:
+            pass
 
 
 async def delete_option(bot, message, channel, delete_emoji, timeout=config['discord']['delete_timeout'] / 2):
