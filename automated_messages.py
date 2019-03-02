@@ -27,7 +27,6 @@ async def get_members(server, message=None):
     members = []
     for user in server.members:
         if database_tools.is_automated(user):
-            print(user)
             members.append(user)
             if message is not None:
                 await message.edit(content="Initialising - found {count} users".format(count=len(members)))
