@@ -18,8 +18,10 @@ database_tools = DatabaseTools(client)
 
 print("Awaiting login")
 
-position = None
+position = 0
 opted_in_users = []
+channel = None
+server = None
 
 async def get_members(server, message=None):
     members = []
@@ -34,12 +36,15 @@ async def get_members(server, message=None):
 
 async def main():
     global opted_in_users
+    global position
+    global server
+    global channel
     error_count = 0
     while True:
         try:
-            for x in (position, len(opted_in_users)):
+            for x in range(position, len(opted_in_users)):
                 position = x
-                    
+                user = opted_in_users[x]
                 messages, channels = await database_tools.get_messages(user.id, config['limit'])
                 cnx.commit()
                 text_full = ""
@@ -78,13 +83,17 @@ async def main():
 
 @client.event
 async def on_ready():
+    global server
+    global channel
     found = False
-    for server in client.guilds:
-        for channel in server.channels:
-            if channel.id == config['discord']['automated_channel']:
+    for server_1 in client.guilds:
+        for channel_1 in server_1.channels:
+            if channel_1.id == config['discord']['automated_channel']:
                 found = True
                 break
         if found:
+            server = server_1
+            channel = channel_1
             break
         print("Not found")
     if not found:
