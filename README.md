@@ -3,6 +3,9 @@
 
 **Note: This bot requires *express* user consent. Modifying this bot to remove these checking features would result in you violating Discord TOS.**
 
+
+[![CodeFactor](https://www.codefactor.io/repository/github/valknight/discord_message_analytics/badge/master)](https://www.codefactor.io/repository/github/valknight/discord_message_analytics/overview/master)
+
 ## Requirements
  - Python 3.5 or higher
  - MySQL/MariaDB server
