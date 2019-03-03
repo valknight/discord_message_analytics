@@ -30,18 +30,19 @@ async def get_members(server, message=None):
             members.append(user)
             if message is not None:
                 await message.edit(content="Initialising - found {count} users".format(count=len(members)))
+            if len(members) > 4:
+                return members
     return members
 
 
 async def main():
     global opted_in_users
     global position
-    global server
-    global channel
     error_count = 0
     while True:
         try:
             for x in range(position, len(opted_in_users)):
+                server, channel = await get_channel()
                 position = x
                 user = opted_in_users[x]
                 messages, channels = await database_tools.get_messages(user.id, config['limit'])
@@ -79,11 +80,7 @@ async def main():
             if error_count > 3:
                 sys.exit(1)
 
-
-@client.event
-async def on_ready():
-    global server
-    global channel
+async def get_channel():
     found = False
     for server_1 in client.guilds:
         for channel_1 in server_1.channels:
@@ -98,6 +95,13 @@ async def on_ready():
     if not found:
         print("Failed to find channel. Check your config")
         sys.exit(1)
+    return server_1, channel_1
+
+@client.event
+async def on_ready():
+    global server
+    global channel
+    server, channel = await get_channel()
     # initial propogation of users
     message = await channel.send("Starting message loop")
     global opted_in_users
