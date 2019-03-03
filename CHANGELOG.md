@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.0
+
+- Make skip scrape also skip the scraping done in bot.py
+
 ## v0.15.1
 
 - Show already guessed letters in hangman

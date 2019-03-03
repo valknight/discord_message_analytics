@@ -2,6 +2,8 @@ import os
 import asyncio
 import discord
 import emoji
+import sys
+import json
 import mysql
 from discord.ext import commands
 
@@ -26,7 +28,8 @@ else:
 
 shard_count = config['discord'].get("shard_count")
 if shard_count is None:
-    logger.warn("config['discord']['shard_count'] is not set - defaulting to 1 shard")
+    logger.warn(
+        "config['discord']['shard_count'] is not set - defaulting to 1 shard")
     shard_count = 1
 
 client = commands.AutoShardedBot(
@@ -36,30 +39,35 @@ client_tools = ClientTools(client)
 database_tools = DatabaseTools(client)
 token = config['discord']['token']
 
+
 @client.event
 async def on_ready():
     game = discord.Game("Starting")
     await client.change_presence(activity=game)
-    logger.info("Connected to Discord as {} ({})".format(client.user.name, client.user.id))
-    
+    logger.info("Connected to Discord as {} ({})".format(
+        client.user.name, client.user.id))
+
     # This needs to be here, so that all the other cogs can be loaded
     client.load_extension("ags_experiments.cogs.loader")
     await set_activity(client)
 
     for guild in client.guilds:
-            guild_settings.add_guild(guild)
+        guild_settings.add_guild(guild)
     members = []
-    for guild in client.guilds:
-        if debug:
-            logger.info("Found guild {} - {} channels".format(guild.name, len(guild.text_channels)))
-        for member in guild.members:
-            name = database_tools.opted_in(user_id=member.id)
-            if name is not False:
-                if name not in members:
-                    members.append(member)
-    logger.info("Initialising building data profiles on existing messages. This will take a while.")
-    await client_tools.build_data_profile(members, limit=None)
-    
+    if not bool(config['discord'].get("skip_scrape")):
+        for guild in client.guilds:
+            if debug:
+                logger.info(
+                    "Found guild {} - {} channels".format(guild.name, len(guild.text_channels)))
+            for member in guild.members:
+                name = database_tools.opted_in(user_id=member.id)
+                if name is not False:
+                    if name not in members:
+                        members.append(member)
+        logger.info(
+            "Initialising building data profiles on existing messages. This will take a while.")
+        await client_tools.build_data_profile(members, limit=None)
+
 
 @client.event
 async def on_message(message):
