@@ -49,8 +49,9 @@ async def main():
 
                 for x in range(0, len(messages)):
                     channel_temp = client.get_channel(int(channels[x]))
-                    if not channel_temp.is_nsfw():
-                        text_full = text_full + messages[x] + "\n"
+                    if channel_temp is not None:
+                        if not channel_temp.is_nsfw():
+                            text_full = text_full + messages[x] + "\n"
                 try:
                     text_model = markovify.NewlineText(
                         text_full, state_size=config['state_size'])
