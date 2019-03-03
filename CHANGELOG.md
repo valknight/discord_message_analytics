@@ -3,6 +3,7 @@
 ## v0.16.0
 
 - Make skip scrape also skip the scraping done in bot.py
+- Add tool on [prefix]sync to auto copy the current sever structure, permissions and roles, to another test environment
 
 ## v0.15.1
 
