@@ -10,7 +10,7 @@ from ags_experiments.database.database_tools import DatabaseTools
 from ags_experiments.settings.config import config, strings
 import ags_experiments.colours as colours
 
-class Sentiment():
+class Sentiment(commands.Cog):
 
     def __init__(self, client):
         self.client = client

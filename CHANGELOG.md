@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.16.1
+
+- Patch to work with latest discord.py
+
 ## v0.16.0
 
 - Make skip scrape also skip the scraping done in bot.py

@@ -10,7 +10,7 @@ from ags_experiments.client_tools import ClientTools
 from ags_experiments.settings.config import strings, config
 
 
-class Unembed():
+class Unembed(commands.Cog):
 
     def __init__(self, client):
         self.client = client

@@ -7,7 +7,7 @@ from ags_experiments.database.database_tools import DatabaseTools
 from ags_experiments.settings.config import strings, config
 
 
-class Tagger():
+class Tagger(commands.Cog):
 
     def __init__(self, client):
         self.client = client

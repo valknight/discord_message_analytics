@@ -23,7 +23,7 @@ Your data may also be stored on data centres around the world, due to our usage 
 """
 
 
-class Controls():
+class Controls(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.database_tools = DatabaseTools(client)

@@ -94,7 +94,7 @@ class Hangman():
             return True
         return False
 
-class Fun():
+class Fun(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.hangman_in_progress = []

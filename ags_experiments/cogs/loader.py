@@ -27,7 +27,7 @@ startup_extensions = [
 
 
 
-class Loader():
+class Loader(commands.Cog):
     """
     This short cog is just intended to be a loader for other cogs.
     Don't add to this unless you have to, as this is designed to be minimal so to prevent breaking all cogs

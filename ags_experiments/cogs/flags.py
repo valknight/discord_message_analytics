@@ -10,7 +10,7 @@ from ags_experiments.database.database_tools import DatabaseTools
 from ags_experiments.settings.guild_settings import get_bad_words
 
 
-class Flags():
+class Flags(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.database_tools = DatabaseTools(client)

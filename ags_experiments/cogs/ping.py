@@ -11,7 +11,7 @@ from ags_experiments.utils import get_role, get_roles, get_user
 from ags_experiments.settings.config import config, strings
 
 
-class Ping():
+class Ping(commands.Cog):
 
     def __init__(self, client):
         self.client = client

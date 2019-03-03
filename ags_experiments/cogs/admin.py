@@ -19,7 +19,7 @@ from ags_experiments.logger import logger
 from ags_experiments.settings import guild_settings
 
 
-class Admin():
+class Admin(commands.Cog):
 
     def __init__(self, client):
         self.client = client

@@ -7,8 +7,9 @@ from ags_experiments.logger import logger
 from ags_experiments.role_c import DbRole
 import emoji
 import mysql
+from discord.ext import commands
 
-class MessageLogger():
+class MessageLogger(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.client_tools = ClientTools(client)
@@ -60,7 +61,8 @@ class MessageLogger():
                 cnx.commit()
         else:
             logger.warn("Skipping scraping data from existing servers - data may be out of date")
-        
+    
+    @commands.Cog.listener()
     async def on_message(self, message):
         return await self.client_tools.process_message(message)
 
