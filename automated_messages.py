@@ -30,8 +30,6 @@ async def get_members(server, message=None):
             members.append(user)
             if message is not None:
                 await message.edit(content="Initialising - found {count} users".format(count=len(members)))
-            if len(members) > 4:
-                return members
     return members
 
 
