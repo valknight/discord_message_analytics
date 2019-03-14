@@ -108,7 +108,8 @@ class Ping(commands.Cog):
 
     @role.command()
     async def info(self, ctx, *, role_name):
-        print(role_name)
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         if role is None:
             em = Embed(title="{} does not exist".format(role_name), color=red)
