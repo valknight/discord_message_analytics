@@ -3,6 +3,8 @@
 ## v0.16.2
 
 - Fixed handling when `?role leave` is used on a role which does not exist
+- Added command `?role info [role_name]` to get info about a role
+
 ## v0.16.1
 
 - Patch to work with latest discord.py
