@@ -85,13 +85,14 @@ class Ping(commands.Cog):
 
     async def output_join_role(self, ctx, role_name):
         """Join a ping group / role given a name"""
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         try:
             if not role['is_joinable']:
                 return await ctx.channel.send("**FAIL** : This role cannot currently be joined.")
         except TypeError:
-            return await ctx.channel.send("**FAIL** : Could not find role - if you put spaces in, make sure it's in "
-                                          "\"Quotation marks like this\"")
+            return await ctx.channel.send("**FAIL** : Could not find role - are you sure this isn't a Discord based role?")
         cur_members = role['members']
         if ctx.author.id in cur_members:
             return await ctx.channel.send("**FAIL** : You are already a member of this role!")
@@ -102,12 +103,27 @@ class Ping(commands.Cog):
         return await ctx.channel.send("**SUCCESS** : You have now joined {}".format(role['role_name']))
 
     @role.command()
-    async def join(self, ctx, role_name):
+    async def join(self, ctx, *, role_name):
         await self.output_join_role(ctx, role_name)
 
-    async def output_leave_role(self, ctx, role_name):
+    @role.command()
+    async def info(self, ctx, *, role_name):
+        print(role_name)
         role = get_role(ctx.guild.id, role_name)
-
+        if role is None:
+            em = Embed(title="{} does not exist".format(role_name), color=red)
+        else:
+            em = Embed(title="Information for {}".format(role['role_name']), color=green)
+            em.add_field(name="Joinable?", value=str(bool(role['is_joinable'])), inline=True)
+            em.add_field(name="Pingable?", value=str(bool(role['is_pingable'])), inline=True)
+        em.set_footer(text=strings['ping']['help'])
+        await ctx.send(embed=em)
+    async def output_leave_role(self, ctx, role_name):
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
+        role = get_role(ctx.guild.id, role_name)
+        if role is None:
+            return await ctx.channel.send("**FAIL** : This role does not exist - are you sure it's not a Discord based role?")
         cur_members = role['members']
 
         if ctx.author.id not in cur_members:
@@ -120,7 +136,7 @@ class Ping(commands.Cog):
         return await ctx.channel.send("**SUCCESS** : You have now left {}".format(role['role_name']))
 
     @role.command()
-    async def leave(self, ctx, role_name):
+    async def leave(self, ctx, *, role_name):
         """Join a ping group / role given a name"""
         await self.output_leave_role(ctx, role_name)
 
@@ -236,12 +252,14 @@ No. If you were part of a role before it's migration to this system, your member
         await self.output_get_settings(ctx)
 
     @commands.command()
-    async def ping(self, ctx, role_name):
+    async def ping(self, ctx, *, role_name):
         """
         Usage: ??ping role_name
 
         To find out more about how the bot based roles work, run the command ?about_pings
         """
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         if role is None:
             return await ctx.channel.send(embed=discord.Embed(title="Fail", description="Cannot find that role.", color=red))
@@ -280,12 +298,12 @@ No. If you were part of a role before it's migration to this system, your member
             return await ctx.channel.send("**FAIL** : Role not pingable")
 
     @commands.command(aliases=["join", "joinrole"], hidden=True)
-    async def join_role(self, ctx, role_name):
+    async def join_role(self, ctx, *, role_name):
         """Join a ping group / role given a name"""
         await self.output_join_role(ctx, role_name)
 
     @commands.command(aliases=["leave", "leaverole"], hidden=True)
-    async def leave_role(self, ctx, role_name):
+    async def leave_role(self, ctx, *, role_name):
         """Join a ping group / role given a name"""
         await self.output_leave_role(ctx, role_name)
 

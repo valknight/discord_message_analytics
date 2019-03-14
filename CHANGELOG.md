@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.16.2
+
+- Fixed handling when `?role leave` is used on a role which does not exist
 ## v0.16.1
 
 - Patch to work with latest discord.py

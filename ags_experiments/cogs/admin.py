@@ -110,8 +110,10 @@ class Admin(commands.Cog):
             await ctx.send("Invalid params. Run `help rolem` to get all commands.")
 
     @role_manage.command()
-    async def add(self, ctx, role_name):
+    async def add(self, ctx, *, role_name):
         """Add a role. Note: by default, it isn't joinable"""
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(
             title="Success", description="Created role {}".format(role_name), color=green)
@@ -125,8 +127,10 @@ class Admin(commands.Cog):
         return await ctx.channel.send(embed=em)
 
     @role_manage.command(aliases=["remove"])
-    async def delete(self, ctx, role_name):
+    async def delete(self, ctx, *, role_name):
         """Deletes a role - cannot be undone!"""
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(
             title="Success", description="Deleted role {}".format(role_name), color=green)
@@ -140,8 +144,10 @@ class Admin(commands.Cog):
         return await ctx.channel.send(embed=em)
 
     @role_manage.command(aliases=["togglepingable"])
-    async def pingable(self, ctx, role_name):
+    async def pingable(self, ctx, *, role_name):
         """Change a role from not pingable to pingable or vice versa"""
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         if role is None:
             return await ctx.channel.send(embed=discord.Embed(title='Error', description='Could not find that role', color=red))
@@ -156,10 +162,12 @@ class Admin(commands.Cog):
         await ctx.channel.send(embed=discord.Embed(title="SUCCESS", description="Set {} ({}) to {}".format(role['role_name'], role['role_id'], text), color=green))
 
     @role_manage.command(aliases=["togglejoinable", "togglejoin", "toggle_join"])
-    async def joinable(self, ctx, role_name):
+    async def joinable(self, ctx, *, role_name):
         """
         Toggles whether a role is joinable
         """
+        if role_name[0]=='"' and role_name[-1] == '"':
+            role_name=role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         if role is None:
             em = discord.Embed(title="Error", description="Could not find role {}".format(
