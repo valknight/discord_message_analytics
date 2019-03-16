@@ -122,15 +122,7 @@ async def on_command_error(ctx, error):
 
 @client.event
 async def on_member_join(member):
-    try:
-        cursor.execute(insert_users, (member.id,))
-    except mysql.connector.errors.IntegrityError:
-        pass  # we pass because we just want to make sure we add any new users, so we expect some already here
-    try:
-        cursor.execute(insert_settings, (member.id,))
-    except mysql.connector.errors.IntegrityError:
-        pass  # see above
-    logger.info("Added {}".format(str(member)))
+    database_tools.add_user(member) # handles adding the user to our database
 
 
 @client.event

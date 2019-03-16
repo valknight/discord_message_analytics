@@ -164,3 +164,15 @@ class DatabaseTools():
             cursor_dict.execute(query, (user_id, ))
         res = cursor_dict.fetchall()[0]
         return int(res['message_count'])
+
+    def add_user(self, member):
+        try:
+            cursor.execute(insert_users, (member.id,))
+            cnx.commit()
+        except mysql.connector.errors.IntegrityError:
+            pass  # we pass because we just want to make sure we add any new users, so we expect some already here
+        try:
+            cursor.execute(insert_settings, (member.id,))
+            cnx.commit()
+        except mysql.connector.errors.IntegrityError:
+            pass  # see above

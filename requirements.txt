@@ -4,3 +4,4 @@ yarl<1.2
 Algorithmia
 https://github.com/Rapptz/discord.py/archive/rewrite.zip#egg=discord.py[voice]
 emoji
+click

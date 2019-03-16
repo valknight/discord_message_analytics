@@ -7,8 +7,11 @@ from ags_experiments.logger import logger
 from ags_experiments.role_c import DbRole
 import emoji
 import mysql
+import click
+
 from discord.ext import commands
 
+        
 class MessageLogger(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -28,15 +31,10 @@ class MessageLogger(commands.Cog):
                         cursor.execute(update_channel, (emoji.demojize(channel.name), channel.id))
                         logger.debug("Updated {}".format(emoji.demojize(channel.name)))
                 logger.info("{}: Updating users".format(str(guild)))
-                for member in guild.members:
-                    try:
-                        cursor.execute(insert_users, (member.id,))
-                    except mysql.connector.errors.IntegrityError:
-                        pass  # we pass because we just want to make sure we add any new users, so we expect some already here
-                    try:
-                        cursor.execute(insert_settings, (member.id,))
-                    except mysql.connector.errors.IntegrityError:
-                        pass  # see above
+                with click.progressbar(guild.members, length=len(guild.members), label="Adding users for {}".format(str(guild))) as members:
+                    for member in members:
+                        self.database_tools.add_user(member)
+                    
                 logger.info("{}: Finished {} users".format(
                     str(guild), len(guild.members)))
                 logger.info("{}: Updating roles".format(str(guild)))
