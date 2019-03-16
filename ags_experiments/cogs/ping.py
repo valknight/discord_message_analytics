@@ -270,25 +270,26 @@ No. If you were part of a role before it's migration to this system, your member
                 user_db = get_user(member)
                 # get_member is used instead of get_user as User doesn't
                 user_discord = ctx.guild.get_member(member)
-                # not have a status property, only Members
-                if user_discord.status != discord.Status.offline or (user_db['ping_online_only'] != 1):
-                    if user_db['ping_public'] == 1:
-                        public_message += user_discord.mention + " "
-                    else:
-                        em = Embed(title="Ping!", colour=gold)
-                        em.add_field(name="Message", value=str(
-                            ctx.message.content), inline=False)
-                        em.add_field(name="Channel", value=ctx.channel)
-                        em.add_field(name="Role", value=role_name)
-                        em.add_field(name="Time", value=ctx.message.created_at)
-                        em.add_field(name="Pinger", value=str(ctx.author))
-                        em.add_field(name="Click here to jump to message",
-                                     value="https://discordapp.com/channels/{}/{}/{}".format(ctx.guild.id,
-                                                                                             ctx.channel.id,
-                                                                                             ctx.message.id),
-                                     inline=False)
-                        em.set_footer(text=strings['ping']['help'])
-                        await user_discord.send(embed=em)
+                if user_discord is not None:
+                    # not have a status property, only Members
+                    if user_discord.status != discord.Status.offline or (user_db['ping_online_only'] != 1):
+                        if user_db['ping_public'] == 1:
+                            public_message += user_discord.mention + " "
+                        else:
+                            em = Embed(title="Ping!", colour=gold)
+                            em.add_field(name="Message", value=str(
+                                ctx.message.content), inline=False)
+                            em.add_field(name="Channel", value=ctx.channel)
+                            em.add_field(name="Role", value=role_name)
+                            em.add_field(name="Time", value=ctx.message.created_at)
+                            em.add_field(name="Pinger", value=str(ctx.author))
+                            em.add_field(name="Click here to jump to message",
+                                        value="https://discordapp.com/channels/{}/{}/{}".format(ctx.guild.id,
+                                                                                                ctx.channel.id,
+                                                                                                ctx.message.id),
+                                        inline=False)
+                            em.set_footer(text=strings['ping']['help'])
+                            await user_discord.send(embed=em)
             if public_message == "":
                 return await ctx.channel.send(embed=discord.Embed(title="Sent!", description="All users have been pinged privately with the message.", color=green))
             else:
