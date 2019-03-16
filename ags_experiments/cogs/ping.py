@@ -235,7 +235,7 @@ No. If you were part of a role before it's migration to this system, your member
     @settings.command()
     async def toggle_public(self, ctx):
         """Toggle whether you are pinged publicly or in private over direct message"""
-        self.output_toggle_public_ping(ctx)
+        await self.output_toggle_public_ping(ctx)
 
     @commands.command(aliases=["toggle_ping_public", "togglepublicping", "togglepingpublic"], hidden=True)
     async def toggle_public_ping(self, ctx):
