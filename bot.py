@@ -116,8 +116,7 @@ async def on_command_error(ctx, error):
             if embed:
                 embed.colour = 0x4c0000
                 await ctx.send(embed=embed, delete_after=config['discord']['delete_timeout'])
-    else:
-        raise error
+    raise error
 
 
 @client.event
