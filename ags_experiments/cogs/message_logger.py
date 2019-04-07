@@ -1,17 +1,17 @@
+import emoji
+import mysql
+from discord.ext import commands
+from tqdm import tqdm
+
 from ags_experiments.client_tools import ClientTools
-from ags_experiments.settings.config import config
 from ags_experiments.database import cnx, cursor
-from ags_experiments.database.database_tools import DatabaseTools, insert_users, insert_settings, insert_role, \
+from ags_experiments.database.database_tools import DatabaseTools, insert_role, \
     update_role
 from ags_experiments.logger import logger
 from ags_experiments.role_c import DbRole
-import emoji
-import mysql
-import click
+from ags_experiments.settings.config import config
 
-from discord.ext import commands
 
-        
 class MessageLogger(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -31,9 +31,9 @@ class MessageLogger(commands.Cog):
                         cursor.execute(update_channel, (emoji.demojize(channel.name), channel.id))
                         logger.debug("Updated {}".format(emoji.demojize(channel.name)))
                 logger.info("{}: Updating users".format(str(guild)))
-                with click.progressbar(guild.members, length=len(guild.members), label="Adding users for {}".format(str(guild))) as members:
-                    for member in members:
-                        self.database_tools.add_user(member)
+                for member in tqdm(guild.members, total = len(guild.members),
+                                   desc = "Adding users for {}".format(str(guild))):
+                    self.database_tools.add_user(member)
                     
                 logger.info("{}: Finished {} users".format(
                     str(guild), len(guild.members)))

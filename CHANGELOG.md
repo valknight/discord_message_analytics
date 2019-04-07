@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.16.4
+
+### Frontend
+
+- Made ?roles order by name, instead of by the arbitrary ID
+
+### Backend
+
+- Cleaned up about_pings
+- Moved from `click` to `tqdm` for progress bars
+
+## v0.16.3
+
+- Cleanup of the Git repo to remove bits of the data directory which won't be needed for other hosts
+
 ## v0.16.2
 
 - Fixed handling when `?role leave` is used on a role which does not exist

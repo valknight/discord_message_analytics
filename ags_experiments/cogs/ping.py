@@ -7,8 +7,8 @@ from ags_experiments.colours import gold, green, red
 from ags_experiments.database import cnx, cursor_dict as cursor
 from ags_experiments.database.database_tools import DatabaseTools
 from ags_experiments.role_c import DbRole
-from ags_experiments.utils import get_role, get_roles, get_user
 from ags_experiments.settings.config import config, strings
+from ags_experiments.utils import get_role, get_roles, get_user
 
 
 class Ping(commands.Cog):
@@ -148,37 +148,37 @@ Hi there! You've probably had this command given to you to explain how the new p
 
 *What roles are currently in this system?*
 
-To find the roles currently in this system, run `{}role list` - this command will spit out the current, up to date list of enabled roles for you to ping.
+To find the roles currently in this system, run `{prefix}role list` - this command will spit out the current, up to date list of enabled roles for you to ping.
 
 *How do I join a role?*
 
-Just type `{}role join "[role_name]"` where `role_name` is the name in bold given to you by the command above. Note: the quotes are important!
+Just type `{prefix}role join "[role_name]"` where `role_name` is the name in bold given to you by the command above. Note: the quotes are important!
 
 *How do I ping a role?*
 
-You can either copy paste the command from {}role list, or, if you already know the role name, run `{}ping "[role_name]"` - again, the quotes are important!
+You can either copy paste the command from {prefix}role list, or, if you already know the role name, run `{prefix}ping "[role_name]"` - again, the quotes are important!
 
 *How do I leave a role?*
 
-Just repeat what you did to join a role, but, replace `{}role join` with `{}role leave`.
+Just repeat what you did to join a role, but, replace `{prefix}role join` with `{prefix}role leave`.
 
 *I want to find the roles I'm part of? How do I do that?*
 
-Run `{}role` on it's own, and AGSE will tell you!
+Run `{prefix}role` on it's own, and AGSE will tell you!
 
 *Can I turn off being pinged while offline?*
 
-Yes! Just run `{}role settings toggle_offline`
+Yes! Just run `{prefix}role settings toggle_offline`
 
 *Can I turn off my username being shown in the channel when pinged?*
 
-Again, yes! Run `{}role settings toggle_public` and all pings will be sent to you over DM, with a link to the message that trigerred it.
+Again, yes! Run `{prefix}role settings toggle_public` and all pings will be sent to you over DM, with a link to the message that trigerred it.
 
 *I was already part of a role - do I have to join again?*
 
-No. If you were part of a role before it's migration to this system, your membership was transferred over. Note, this may not apply if you joined after this system went live - you can check with `{}role`
+No. If you were part of a role before it's migration to this system, your membership was transferred over. Note, this may not apply if you joined after this system went live - you can check with `{prefix}role`
 
-        """.format(prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix, prefix)
+        """.format(prefix = prefix)
         em = Embed(title="About roles!", description=message)
 
         return await ctx.channel.send(embed=em)

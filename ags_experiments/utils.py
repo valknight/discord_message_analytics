@@ -22,6 +22,7 @@ def get_roles(guild_id, limit_to_joinable=True):
         query = "SELECT * FROM `gssp`.`roles` WHERE `guild_id` = %s AND `is_joinable` = 1"
     else:
         query = "SELECT * FROM `gssp`.`roles` WHERE `guild_id` = %s"
+    query = "{query} ORDER BY role_name".format(query = query)
     cursor.execute(query, (guild_id, ))
     return cursor.fetchall()
 

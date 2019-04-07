@@ -1,7 +1,9 @@
 from discord.ext import commands
 
-from ags_experiments.settings.config import config
+from ags_experiments.logger import logger
 from ags_experiments.settings import guild_settings
+from ags_experiments.settings.config import config
+
 
 def is_owner_or_admin():
     def predicate(ctx):
@@ -25,6 +27,7 @@ def is_server_allowed():
         for role in ctx.author.roles:
             if str(role.id) in server_settings['staff_roles']:
                 return True
+        logger.warning("User {} failed is_server_allowed check".format(ctx.author.id))
         return False
         
     return commands.check(predicate)
