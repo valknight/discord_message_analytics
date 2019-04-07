@@ -140,6 +140,7 @@ class ClientTools():
                         break
 
                 if adding:
+                    logger.info("Logging from {}".format(cur_channel.name))
                     counter = 0
                     already_added = 0
                     async for message in cur_channel.history(limit=limit, reverse=True):
