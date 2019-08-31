@@ -410,7 +410,11 @@ class Admin(commands.Cog):
 
                 elif to_return['type'] == "Voice":
                     # do voice
-                    to_return['bitrate'] = channel.bitrate
+                    if channel.bitrate > 96000:
+                        # Higher bitrates require nitro boosts, which the destination server may not have. Assume not.
+                        to_return['bitrate'] = 96000
+                    else:
+                        to_return['bitrate'] = channel.bitrate
                     to_return['user_limit'] = channel.user_limit
             return to_return
 
