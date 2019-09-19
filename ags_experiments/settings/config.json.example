@@ -26,7 +26,8 @@
     "host": "mysql_hostname",
     "database": "mysql_scheme",
     "charset": "utf8mb4",
-    "collation": "utf8mb4_unicode_ci"
+    "collation": "utf8mb4_unicode_ci",
+    "auth_plugin": "mysql_native_password"
   },
   "language": "english",
   "despacito_enabled" : false,
