@@ -112,8 +112,8 @@ class Admin(commands.Cog):
     @role_manage.command()
     async def add(self, ctx, *, role_name):
         """Add a role. Note: by default, it isn't joinable"""
-        if role_name[0]=='"' and role_name[-1] == '"':
-            role_name=role_name[1:-1]
+        if role_name[0] == '"' and role_name[-1] == '"':
+            role_name = role_name[1:-1]
         role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(
             title="Success", description="Created role {}".format(role_name), color=green)
@@ -126,11 +126,37 @@ class Admin(commands.Cog):
             cnx.commit()
         return await ctx.channel.send(embed=em)
 
+    @role_manage.command()
+    async def rename(self, ctx, role_name=None, new_name=None):
+        """
+        Changes the name of a role
+
+        Params:
+            role_name : name of the role to be changed
+            new_name : name the role should be
+        """
+
+        # Removes excess spaces at the beginning of a role name
+        if role_name[0] == '"' and role_name[-1] == '"':
+            role_name = role_name[1:-1]
+
+        role_check = get_role(ctx.guild.id, role_name)
+        em = discord.Embed(title='Success', description="Renamed {} to {}".format(
+            role_name, new_name), color=green)
+        if role_check is None:
+            em = discord.Embed(
+                title="Error", description="{} is not in the DB".format(role_name), color=red)
+        else:
+            query = "UPDATE `gssp`.`roles` SET `role_name` = %s WHERE (`role_name` = %s AND `guild_id` = %s);"
+            cursor.execute(query, (new_name, role_name, ctx.guild.id))
+            cnx.commit()
+        return await ctx.channel.send(embed=em)
+
     @role_manage.command(aliases=["remove"])
     async def delete(self, ctx, *, role_name):
         """Deletes a role - cannot be undone!"""
-        if role_name[0]=='"' and role_name[-1] == '"':
-            role_name=role_name[1:-1]
+        if role_name[0] == '"' and role_name[-1] == '"':
+            role_name = role_name[1:-1]
         role_check = get_role(ctx.guild.id, role_name)
         em = discord.Embed(
             title="Success", description="Deleted role {}".format(role_name), color=green)
@@ -146,8 +172,8 @@ class Admin(commands.Cog):
     @role_manage.command(aliases=["togglepingable"])
     async def pingable(self, ctx, *, role_name):
         """Change a role from not pingable to pingable or vice versa"""
-        if role_name[0]=='"' and role_name[-1] == '"':
-            role_name=role_name[1:-1]
+        if role_name[0] == '"' and role_name[-1] == '"':
+            role_name = role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         if role is None:
             return await ctx.channel.send(embed=discord.Embed(title='Error', description='Could not find that role', color=red))
@@ -166,8 +192,8 @@ class Admin(commands.Cog):
         """
         Toggles whether a role is joinable
         """
-        if role_name[0]=='"' and role_name[-1] == '"':
-            role_name=role_name[1:-1]
+        if role_name[0] == '"' and role_name[-1] == '"':
+            role_name = role_name[1:-1]
         role = get_role(ctx.guild.id, role_name)
         if role is None:
             em = discord.Embed(title="Error", description="Could not find role {}".format(
@@ -267,8 +293,10 @@ class Admin(commands.Cog):
     async def sync(self, ctx):
         clone_target = self.client.get_guild(
             config['discord'].get("clone_server_target"))
+
         def generate_progress_embed(m_text, colour=yellow, url=None):
-            em = discord.Embed(title="Server Clone Progress", description="Status: {text}".format(text=m_text), colour=colour)
+            em = discord.Embed(title="Server Clone Progress", description="Status: {text}".format(
+                text=m_text), colour=colour)
             if url is not None:
                 em.add_field(name="Invite link", value=url)
             return em
@@ -478,7 +506,7 @@ class Admin(commands.Cog):
                 await role.delete(reason="Cleaning for copying")
             except discord.errors.HTTPException:
                 pass
-        
+
         await progress.edit(embed=generate_progress_embed("Wiping channels of {clone_target.name}".format(clone_target=clone_target)))
         for channel in clone_target.channels:
             await channel.delete(reason="Cleaning for copying")
