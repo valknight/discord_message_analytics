@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.16.5
+
+- Updates requirements.txt to work with lastest discord.py
+- Update rolem to support renaming role
+- Added alias role_m to rolem
+- Added example to show how to change auth_plugin
+
 ## v0.16.4
 
 ### Frontend
