@@ -103,7 +103,7 @@ class Admin(commands.Cog):
         return await ctx.send(embed=discord.Embed(title="Could not find role {}".format(role_name)))
 
     @is_server_allowed()
-    @commands.group(aliases=["rolem"])
+    @commands.group(aliases=["rolem", 'role_m'])
     async def role_manage(self, ctx):
         """Manages AGSE roles (ping groups)"""
         if ctx.invoked_subcommand is None:
